@@ -143,3 +143,11 @@ def test_sql_injection(db_test):
 
     ergebnis = db_test.abfragen(sql, parameter)
     assert len(ergebnis) == 0, "SQL-Injection sollte nicht erfolgreich sein."
+
+def test_view_erstellung(db_test):
+    """Testet, ob Views korrekt erstellt werden."""
+    db_test.initialisieren()
+    
+    sql = "SELECT name FROM sqlite_master WHERE type='view' AND name='startbildschirm';"
+    ergebnis = db_test.abfragen(sql)
+    assert len(ergebnis) == 1, "Die View 'startbildschirm' sollte existieren."

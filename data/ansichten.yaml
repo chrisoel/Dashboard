@@ -1,0 +1,11 @@
+views:
+  startbildschirm:
+    - "CREATE VIEW IF NOT EXISTS startbildschirm AS SELECT studiengangName, startDatumStudium FROM studiengang;"
+  moduluebersicht:
+    - "CREATE VIEW IF NOT EXISTS moduluebersicht AS SELECT modulName, modulKuerzel, modulStatus FROM modul;"
+  studienfortschritt:
+    - "CREATE VIEW IF NOT EXISTS studienfortschritt AS SELECT semesterID, modulName, modulNote FROM modul WHERE modulNote IS NOT NULL;"
+  zeitmanagement:
+    - "CREATE VIEW IF NOT EXISTS zeitmanagement AS SELECT studiengangName, arbeitstage, zeitModell FROM studiengang;"
+  einstellungen:
+    - "CREATE VIEW IF NOT EXISTS einstellungen AS SELECT studiengangName, startDatumStudium FROM studiengang;"

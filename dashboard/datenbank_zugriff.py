@@ -37,16 +37,33 @@ class DatenbankZugriff:
 
     def initialisieren(self):
         yaml_verzeichnis = Path("data")
+        
         yaml_dateien = yaml_verzeichnis.glob("*.yaml")
-
         for yaml_datei in yaml_dateien:
             try:
                 with open(yaml_datei, "r", encoding="utf-8") as file:
-                    model = yaml.safe_load(file)
-                    self._erstelle_tabelle(model)
-                    self.logger.info(f"Tabelle aus '{yaml_datei.name}' erfolgreich erstellt.")
+                    config = yaml.safe_load(file)
+                    
+                    if "tabelle" in config:
+                        self._erstelle_tabelle(config)
+                    
+                    if "views" in config:
+                        self._erstelle_views(config["views"])
+                    
             except Exception as e:
                 self.logger.error(f"Fehler beim Initialisieren mit '{yaml_datei}': {e}")
+
+    def _erstelle_views(self, views: dict):
+        """Erstellt SQL-Views basierend auf den YAML-Definitionen."""
+        for view_name, view_sql_list in views.items():
+            for view_sql in view_sql_list:
+                try:
+                    cursor = self.verbindung.cursor()
+                    cursor.execute(view_sql)
+                    self.logger.info(f"View '{view_name}' erfolgreich erstellt.")
+                except sqlite3.Error as e:
+                    self.logger.error(f"Fehler beim Erstellen der View '{view_name}': {e}")
+                    raise
 
     def _erstelle_tabelle(self, model: dict):
         tabellen_name = model["tabelle"]
@@ -82,9 +99,15 @@ class DatenbankZugriff:
 
     def manipulieren(self, sql_befehl: str, parameter: tuple = ()) -> bool:
         try:
+            if not self.verbindung:
+                self.logger.error("Datenbankverbindung ist nicht aktiv.")
+                return False
             cursor = self.verbindung.cursor()
             cursor.execute(sql_befehl, parameter)
             self.verbindung.commit()
+            if cursor.rowcount == 0:
+                self.logger.warning("Keine Zeilen betroffen.")
+                return False
             return True
         except sqlite3.Error as e:
             self.logger.error(f"Fehler bei der Manipulation: {e}")
