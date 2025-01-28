@@ -1,0 +1,6 @@
+tabelle: pruefungsleistung
+spalten:
+  pruefungsleistungID: "INTEGER PRIMARY KEY AUTOINCREMENT"
+  modulID: "INTEGER NOT NULL REFERENCES modul(modulID) ON DELETE CASCADE"
+  pruefungDatum: "DATE NOT NULL"
+  pruefungErgebnis: "FLOAT CHECK (pruefungErgebnis BETWEEN 0.00 AND 100.00 OR pruefungErgebnis IS NULL)"

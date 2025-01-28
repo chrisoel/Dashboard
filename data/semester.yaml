@@ -1,0 +1,6 @@
+tabelle: semester
+spalten:
+  semesterID: "INTEGER PRIMARY KEY AUTOINCREMENT"
+  studiengangID: "INTEGER NOT NULL REFERENCES studiengang(studiengangID) ON DELETE CASCADE"
+  semesterNR: "INTEGER NOT NULL CHECK (semesterNR > 0) UNIQUE"
+  istUrlaubSemester: "INTEGER NOT NULL"

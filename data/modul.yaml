@@ -1,0 +1,11 @@
+tabelle: modul
+spalten:
+  modulID: "INTEGER PRIMARY KEY AUTOINCREMENT"
+  semesterID: "INTEGER NOT NULL REFERENCES semester(semesterID) ON DELETE CASCADE"
+  modulName: "TEXT NOT NULL"
+  modulKuerzel: "TEXT NOT NULL UNIQUE"
+  modulStatus: "TEXT NOT NULL DEFAULT 'Offen'"
+  modulPruefungsform: "TEXT NOT NULL CHECK (modulPruefungsform IN ('Klausur', 'Portfolio', 'Fachpräsentation'))"
+  modulNote: "FLOAT CHECK (modulNote BETWEEN 1.0 AND 5.0 OR modulNote IS NULL)"
+  modulEctsPunkte: "INTEGER NOT NULL CHECK (modulEctsPunkte > 0 AND modulEctsPunkte % 5 = 0)"
+  modulStart: "DATE NOT NULL"
