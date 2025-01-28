@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../dashboard')))
+
 import pytest
 from dashboard.logik import Logik
 from dashboard.datenbank_zugriff import DatenbankZugriff
@@ -55,7 +59,17 @@ def test_set_daten(logik_test):
 def test_get_moduluebersicht_ansicht_daten(logik_test):
     """Testet, ob die Modulübersicht korrekt abgefragt werden kann."""
     logik_test.datenbank.initialisieren()
+    
+    # Studiengang einfügen
+    logik_test.datenbank.manipulieren(
+        """
+        INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell, uniqueConstraint)
+        VALUES (?, ?, ?, ?, ?, ?);
+        """,
+        ("Informatik", "2022-10-01", 0, "MO_DI", "Vollzeit", 1)
+    )
 
+    # Semester einfügen
     logik_test.datenbank.manipulieren(
         """
         INSERT INTO semester (studiengangID, semesterNR, istUrlaubSemester)
@@ -63,7 +77,8 @@ def test_get_moduluebersicht_ansicht_daten(logik_test):
         """,
         (1, 1, 0)
     )
-
+    
+    # Modul einfügen
     logik_test.datenbank.manipulieren(
         """
         INSERT INTO modul (semesterID, modulName, modulKuerzel, modulStatus, modulPruefungsform, modulNote, modulEctsPunkte, modulStart)
@@ -71,7 +86,8 @@ def test_get_moduluebersicht_ansicht_daten(logik_test):
         """,
         (1, "Softwareentwicklung", "SE1", "Offen", "Klausur", None, 5, "2023-10-01")
     )
-
+    
+    # Modulübersicht abfragen
     ergebnis = logik_test.get_moduluebersicht_ansicht_daten()
     assert len(ergebnis) == 1, "Es sollte genau ein Modul-Eintrag vorhanden sein."
     assert ergebnis[0][0] == "Softwareentwicklung", "Der Modulname sollte 'Softwareentwicklung' sein."
@@ -100,12 +116,21 @@ def test_update_daten(logik_test):
     sql_create = "CREATE TABLE test_tabelle (id INTEGER PRIMARY KEY, name TEXT);"
     logik_test.datenbank.manipulieren(sql_create)
     logik_test.set_daten("test_tabelle", "INSERT", (1, "Alter Name"))
-
-    erfolg = logik_test.set_daten("test_tabelle", "UPDATE", (1, "Neuer Name"))
+    daten_update = {
+        "modulName": "Geänderte Softwareentwicklung",
+        "modulKuerzel": "SE3",
+        "modulStatus": "Abgeschlossen",
+        "modulPruefungsform": "Klausur",
+        "modulNote": 2.3,
+        "modulEctsPunkte": 10,
+        "modulStart": "2023-12-01",
+        "modulID": 1
+    }
+    erfolg = logik_test.set_daten("modul", "UPDATE", daten_update)
     assert erfolg, "Das Update sollte erfolgreich sein."
 
     ergebnis = logik_test.get_daten("test_tabelle")
-    assert ergebnis[0][1] == "Neuer Name", "Der Name sollte aktualisiert worden sein."
+    assert ergebnis[0][1] == "Neuer Name", "Der Name sollte auf 'Neuer Name' aktualisiert worden sein."
 
 def test_get_empty_table(logik_test):
     """Testet, ob eine leere Tabelle korrekt abgefragt wird."""
@@ -166,3 +191,81 @@ def test_view_abfrage(logik_test):
     ergebnis = logik_test.get_startbildschirm_ansicht_daten()
     assert len(ergebnis) == 1, "Die View-Abfrage sollte einen Eintrag zurückgeben."
     assert ergebnis[0][0] == "Informatik", "Der erste Eintrag sollte 'Informatik' sein."
+
+def test_get_startbildschirm_ansicht_daten(logik_test):
+    """Testet, ob Daten aus der Ansicht 'startbildschirm' abgefragt werden können."""
+    logik_test.datenbank.initialisieren()
+
+    logik_test.datenbank.manipulieren(
+        """
+        INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell, uniqueConstraint)
+        VALUES (?, ?, ?, ?, ?, ?);
+        """,
+        ("Informatik", "2022-10-01", 0, "MO_DI", "Vollzeit", 1)
+    )
+
+    ergebnis = logik_test.get_startbildschirm_ansicht_daten()
+    assert len(ergebnis) == 1, "Es sollte genau ein Eintrag in 'startbildschirm' vorhanden sein."
+    assert ergebnis[0][0] == "Informatik", "Der Studiengang-Name sollte 'Informatik' sein."
+
+
+def test_eintrag_in_modul(logik_test):
+    """Testet das Einfügen eines Eintrags in die Tabelle 'modul'."""
+    logik_test.datenbank.initialisieren()
+
+    logik_test.datenbank.manipulieren(
+        """
+        INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell, uniqueConstraint)
+        VALUES (?, ?, ?, ?, ?, ?);
+        """,
+        ("Informatik", "2022-10-01", 0, "MO_DI", "Vollzeit", 1)
+    )
+    logik_test.datenbank.manipulieren(
+        """
+        INSERT INTO semester (studiengangID, semesterNR, istUrlaubSemester)
+        VALUES (?, ?, ?);
+        """,
+        (1, 1, 0)
+    )
+
+    daten = (1, "Softwareentwicklung", "SE2", "Offen", "Klausur", None, 5, "2023-10-01")
+    erfolg = logik_test.set_daten("modul", "INSERT", daten)
+    assert erfolg, "Das Einfügen eines Eintrags in 'modul' sollte erfolgreich sein."
+
+    ergebnis = logik_test.get_daten("modul")
+    assert len(ergebnis) == 1, "Es sollte genau ein Modul-Eintrag existieren."
+    assert ergebnis[0][2] == "Softwareentwicklung", "Das Modul sollte korrekt eingefügt werden."
+
+
+def test_update_modul(logik_test):
+    """Testet das Aktualisieren eines Eintrags in der Tabelle 'modul'."""
+    logik_test.datenbank.initialisieren()
+    
+    logik_test.datenbank.manipulieren(
+        """
+        INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell, uniqueConstraint)
+        VALUES (?, ?, ?, ?, ?, ?);
+        """,
+        ("Informatik", "2022-10-01", 0, "MO_DI", "Vollzeit", 1)
+    )
+    logik_test.datenbank.manipulieren(
+        """
+        INSERT INTO semester (studiengangID, semesterNR, istUrlaubSemester)
+        VALUES (?, ?, ?);
+        """,
+        (1, 1, 0)
+    )
+    logik_test.datenbank.manipulieren(
+        """
+        INSERT INTO modul (semesterID, modulName, modulKuerzel, modulStatus, modulPruefungsform, modulNote, modulEctsPunkte, modulStart)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        """,
+        (1, "Softwareentwicklung", "SE1", "Offen", "Klausur", None, 5, "2023-10-01")
+    )
+    
+    daten_update = ("Geänderte Softwareentwicklung", "SE3", "Abgeschlossen", "Klausur", None, 5, "2023-10-01", 1)  # modulID am Ende
+    erfolg = logik_test.set_daten("modul", "UPDATE", daten_update)
+    assert erfolg, "Das Aktualisieren eines Eintrags in 'modul' sollte erfolgreich sein."
+    
+    ergebnis = logik_test.get_moduluebersicht_ansicht_daten()
+    assert ergebnis[0][0] == "Geänderte Softwareentwicklung", "Der Modulname sollte 'Geänderte Softwareentwicklung' sein."
