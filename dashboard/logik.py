@@ -84,11 +84,62 @@ class Logik:
     def get_einstellungen_ansicht_daten(self):
         return self.get_daten("einstellungen")
     
-    def set_startbildschirm_ansicht_daten(self, daten: tuple):
-        return self.set_daten("startbildschirm", "INSERT", daten)
+    def set_startbildschirm_ansicht_daten(self, daten: tuple) -> bool:
+        """ Speichert die vollständigen Studiengangsdaten über die 'DatenbankZugriff'-Schicht. """
+        self.logger.info(f"✏️ Studiengang wird gespeichert: {daten}")
+        
+        if len(daten) != 5:
+            self.logger.error("❌ Ungültige Anzahl an Parametern für die Speicherung des Studiengangs.")
+            return False
+
+        studiengang_name, startdatum, urlaubssemester, arbeitstage, zeitmodell = daten
+
+        return self.datenbank.studiengang_speichern(studiengang_name, startdatum, urlaubssemester, arbeitstage, zeitmodell)
     
-    def set_moduluebersicht_ansicht_daten(self, daten: tuple):
-        return self.set_daten("modul", "INSERT", daten)
+    def set_moduluebersicht_ansicht_daten(self, aktion: str, daten: tuple) -> bool:
+        """
+        Bearbeitet Moduleinträge: 
+        - `INSERT`: Fügt ein neues Modul hinzu.
+        - `UPDATE`: Aktualisiert ein bestehendes Modul.
+        - `DELETE`: Löscht ein Modul.
+
+        daten:
+        - INSERT: (semesterID, modulName, modulKuerzel, modulStatus, modulPruefungsform, modulNote, modulEctsPunkte, modulStart)
+        - UPDATE: (modulID, modulName, modulKuerzel, modulStatus, modulPruefungsform, modulNote, modulEctsPunkte, modulStart)
+        - DELETE: (modulID,)
+        """
+        try:
+            if aktion.upper() == "INSERT":
+                self.logger.info(f"➕ Neues Modul wird eingefügt: {daten}")
+                erfolg = self.datenbank.modul_speichern(*daten)
+
+            elif aktion.upper() == "UPDATE":
+                self.logger.info(f"✏️ Modul wird aktualisiert: {daten}")
+                erfolg = self.datenbank.modul_aktualisieren(*daten)
+
+            elif aktion.upper() == "DELETE":
+                self.logger.info(f"🗑️ Modul wird gelöscht: ID {daten[0]}")
+                erfolg = self.datenbank.modul_loeschen(daten[0])
+
+            else:
+                self.logger.error(f"❌ Ungültige Aktion '{aktion}' für Modulbearbeitung.")
+                return False
+
+            if erfolg:
+                self.logger.info(f"✅ Aktion '{aktion}' erfolgreich ausgeführt.")
+            else:
+                self.logger.warning(f"⚠️ Aktion '{aktion}' konnte nicht erfolgreich durchgeführt werden.")
+
+            return erfolg
+
+        except Exception as e:
+            self.logger.error(f"❌ Fehler bei der Modulbearbeitung ({aktion}): {e}")
+            return False
+
+    def get_aktuelles_semester_id(self) -> int:
+        """Holt die aktuelle Semester-ID (falls keine vorhanden, wird 1 genutzt)."""
+        ergebnis = self.datenbank.abfragen("SELECT semesterID FROM semester ORDER BY semesterID DESC LIMIT 1;")
+        return ergebnis[0][0] if ergebnis else 1
     
     def set_studienfortschritt_ansicht_daten(self, daten: tuple):
         return self.set_daten("studienfortschritt", "INSERT", daten)
@@ -96,5 +147,15 @@ class Logik:
     def set_zeitmanagement_ansicht_daten(self, daten: tuple):
         return self.set_daten("zeitmanagement", "INSERT", daten)
     
-    def set_einstellungen_ansicht_daten(self, daten: tuple):
-        return self.set_daten("einstellungen", "INSERT", daten)
+    def set_einstellungen_ansicht_daten(self, aktion: str, daten: tuple = None) -> bool:
+        """
+        Setzt oder löscht die Einstellungen in der Datenbank.
+
+        Aktionen:
+        - "UPDATE": Aktualisiert die Studiengangsdaten
+        - "DELETE": Löscht die gesamte Datenbank
+        
+        Parameter:
+        - daten (tuple): (studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell) für UPDATE
+        """
+        return self.datenbank.einstellungen_verwalten(aktion, daten)

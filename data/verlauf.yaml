@@ -1,0 +1,7 @@
+tabelle: verlauf
+spalten:
+  verlaufID: "INTEGER PRIMARY KEY AUTOINCREMENT"
+  modulOffen: "INTEGER NOT NULL DEFAULT 0"
+  modulInBearbeitung: "INTEGER NOT NULL DEFAULT 0"
+  modulAbgeschlossen: "INTEGER NOT NULL DEFAULT 0"
+  zeitpunkt: "DATE NOT NULL UNIQUE"
