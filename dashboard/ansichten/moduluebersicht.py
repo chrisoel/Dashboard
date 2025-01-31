@@ -57,9 +57,9 @@ class Moduluebersicht(ttk.Frame):
         popup.title(titel)
         popup.geometry("400x600")
 
-        ttk.Label(popup, text="Semester-ID (1-12):").pack(pady=5)
-        semester_entry = ttk.Entry(popup)
-        semester_entry.pack(pady=5)
+        ttk.Label(popup, text="Semester-ID:").pack(pady=5)
+        semester_combobox = ttk.Combobox(popup, values=[str(i) for i in range(1, 13)], state="readonly")
+        semester_combobox.pack(pady=5)
         
         ttk.Label(popup, text="Modulname:").pack(pady=5)
         modulname_entry = ttk.Entry(popup)
@@ -77,9 +77,9 @@ class Moduluebersicht(ttk.Frame):
         pruefungsform_combobox = ttk.Combobox(popup, values=["Klausur", "Portfolio", "Fachpräsentation"])
         pruefungsform_combobox.pack(pady=5)
 
-        ttk.Label(popup, text="ECTS-Punkte (5, 10, 15, ...):").pack(pady=5)
-        ects_entry = ttk.Entry(popup)
-        ects_entry.pack(pady=5)
+        ttk.Label(popup, text="ECTS-Punkte:").pack(pady=5)
+        ects_combobox = ttk.Combobox(popup, values=["5", "10"], state="readonly")
+        ects_combobox.pack(pady=5)
 
         ttk.Label(popup, text="Note (1.0 - 5.0, optional):").pack(pady=5)
         note_entry = ttk.Entry(popup)
@@ -90,19 +90,19 @@ class Moduluebersicht(ttk.Frame):
         kalender.pack(pady=5)
 
         if modulwerte:
-            semester_entry.insert(0, modulwerte[1])
+            semester_combobox.set(str(modulwerte[1]))
             modulname_entry.insert(0, modulwerte[2])
             kuerzel_entry.insert(0, modulwerte[3])
             status_combobox.set(modulwerte[4])
             pruefungsform_combobox.set(modulwerte[6])
-            ects_entry.insert(0, modulwerte[5])
+            ects_combobox.set(str(modulwerte[5]))
             note_entry.insert(0, modulwerte[7] if modulwerte[7] else "")
             kalender.set_date(modulwerte[8])
 
         ttk.Button(popup, text="💾 Speichern", command=lambda: self.modul_speichern(
-            popup, aktion, modulwerte[0] if modulwerte else None, semester_entry.get(), modulname_entry.get(),
+            popup, aktion, modulwerte[0] if modulwerte else None, semester_combobox.get(), modulname_entry.get(),
             kuerzel_entry.get(), status_combobox.get(), pruefungsform_combobox.get(),
-            ects_entry.get(), note_entry.get(), kalender.get_date()
+            ects_combobox.get(), note_entry.get(), kalender.get_date()
         )).pack(pady=10)
 
     def modul_speichern(self, popup, aktion, modul_id, semester_id, modulname, kuerzel, status, pruefungsform, ects, note, startdatum):
@@ -125,11 +125,9 @@ class Moduluebersicht(ttk.Frame):
 
         try:
             ects = int(ects)
-            if ects % 5 != 0 or ects <= 0:
-                raise ValueError
         except ValueError:
             self.logger.error("❌ Fehler: Ungültige ECTS-Punkte.")
-            messagebox.showerror("Fehler", "ECTS-Punkte müssen positiv und durch 5 teilbar sein.")
+            messagebox.showerror("Fehler", "Bitte wählen Sie 5 oder 10 ECTS-Punkte aus.")
             return
 
         try:
