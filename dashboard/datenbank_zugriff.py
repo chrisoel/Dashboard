@@ -169,106 +169,29 @@ class DatenbankZugriff:
 
         return erfolg
     
-    def modul_speichern(
-        self,
-        semester_nr: int,
-        modul_name: str,
-        modul_kuerzel: str,
-        modul_status: str = "Offen",
-        modul_pruefungsform: str = "Klausur",
-        modul_note: float = None,
-        modul_ects: int = 5,
-        modul_start: str = None
-    ) -> bool:
-        """
-        Speichert ein Modul in der 'modul'-Tabelle.
-        Falls das angegebene Semester nicht existiert, wird es automatisch angelegt.
-        """
-
-        self.logger.info(f"✏️ Versuche, Modul zu speichern: {modul_name}, {modul_kuerzel} für Semester {semester_nr}")
-
-        semester = self.abfragen(
-            "SELECT semesterID FROM semester WHERE semesterNR = ? ORDER BY semesterID DESC LIMIT 1;",
-            (semester_nr,)
-        )
-
-        if not semester:
-            self.logger.warning(f"⚠️ Semester {semester_nr} existiert nicht. Erstelle neues Semester...")
-            self.manipulieren(
-                "INSERT INTO semester (studiengangID, semesterNR, istUrlaubSemester) VALUES (?, ?, ?);",
-                (1, semester_nr, 0)
-            )
-            semester = self.abfragen(
-                "SELECT semesterID FROM semester WHERE semesterNR = ? ORDER BY semesterID DESC LIMIT 1;",
-                (semester_nr,)
-            )
-
-        semester_id = semester[0][0]
-        self.logger.info(f"📚 Verwende semesterID = {semester_id} für Modul {modul_name}.")
-
+    def modul_speichern(self, semester_id: int, modul_name: str, kuerzel: str, status: str, ects: int, startdatum: str) -> bool:
+        """Speichert ein Modul in der 'modul'-Tabelle."""
         sql = """
-        INSERT INTO modul (semesterID, modulName, modulKuerzel, modulStatus, modulPruefungsform, modulNote, modulEctsPunkte, modulStart)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        INSERT INTO modul (semesterID, modulName, modulKuerzel, modulStatus, modulEctsPunkte, modulStart)
+        VALUES (?, ?, ?, ?, ?, ?);
         """
-
-        daten = (semester_id, modul_name, modul_kuerzel, modul_status, modul_pruefungsform, modul_note, modul_ects, modul_start)
-
-        erfolg = self.manipulieren(sql, daten)
-
-        if erfolg:
-            self.logger.info(f"✅ Modul erfolgreich gespeichert: {daten}")
-        else:
-            self.logger.error(f"❌ Fehler beim Speichern des Moduls: {daten}")
-
-        return erfolg
+        daten = (semester_id, modul_name, kuerzel, status, ects, startdatum)
+        return self.manipulieren(sql, daten)
     
-    def modul_aktualisieren(self, modul_id: int, modulname: str, kuerzel: str, status: str, pruefungsform: str, note, ects: int, startdatum: str) -> bool:
-        """
-        Aktualisiert die Daten eines Moduls basierend auf der modulID.
-        """
-        self.logger.info(f"✏️ Aktualisiere Modul mit ID {modul_id}...")
-
-        vorhandene_eintraege = self.abfragen("SELECT modulID FROM modul WHERE modulID = ?;", (modul_id,))
-        if not vorhandene_eintraege:
-            self.logger.error(f"❌ Fehler: Modul mit ID {modul_id} existiert nicht.")
-            return False
-
+    def modul_aktualisieren(self, modul_id: int, modul_name: str, kuerzel: str, status: str, ects: int, startdatum: str) -> bool:
+        """Aktualisiert die Daten eines Moduls basierend auf der modulID."""
         sql = """
         UPDATE modul
-        SET modulName = ?, modulKuerzel = ?, modulStatus = ?, modulPruefungsform = ?, modulNote = ?, modulEctsPunkte = ?, modulStart = ?
+        SET modulName = ?, modulKuerzel = ?, modulStatus = ?, modulEctsPunkte = ?, modulStart = ?
         WHERE modulID = ?;
         """
-        daten = (modulname, kuerzel, status, pruefungsform, note, ects, startdatum, modul_id)
-
-        erfolg = self.manipulieren(sql, daten)
-
-        if erfolg:
-            self.logger.info(f"✅ Modul erfolgreich aktualisiert: ID {modul_id}")
-        else:
-            self.logger.warning(f"⚠️ Modul konnte nicht aktualisiert werden: ID {modul_id}")
-        
-        return erfolg
+        daten = (modul_name, kuerzel, status, ects, startdatum, modul_id)
+        return self.manipulieren(sql, daten)
     
     def modul_loeschen(self, modul_id: int) -> bool:
-            """
-            Löscht ein Modul aus der Datenbank basierend auf der modulID.
-            """
-            self.logger.info(f"🗑️ Lösche Modul mit ID {modul_id}...")
-
-            vorhandene_eintraege = self.abfragen("SELECT modulID FROM modul WHERE modulID = ?;", (modul_id,))
-            if not vorhandene_eintraege:
-                self.logger.error(f"❌ Fehler: Modul mit ID {modul_id} existiert nicht und kann nicht gelöscht werden.")
-                return False
-
-            sql = "DELETE FROM modul WHERE modulID = ?;"
-            erfolg = self.manipulieren(sql, (modul_id,))
-
-            if erfolg:
-                self.logger.info(f"✅ Modul erfolgreich gelöscht: ID {modul_id}")
-            else:
-                self.logger.warning(f"⚠️ Modul konnte nicht gelöscht werden: ID {modul_id}")
-
-            return erfolg
+        """Löscht ein Modul aus der Datenbank basierend auf der modulID."""
+        sql = "DELETE FROM modul WHERE modulID = ?;"
+        return self.manipulieren(sql, (modul_id,))
     
     def einstellungen_verwalten(self, aktion: str, daten: tuple = None) -> bool:
         """

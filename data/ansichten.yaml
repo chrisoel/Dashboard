@@ -3,19 +3,16 @@ views:
     - "CREATE VIEW IF NOT EXISTS startbildschirm AS 
         SELECT studiengangName, startDatumStudium 
         FROM studiengang;"
-
+        
   moduluebersicht:
     - "CREATE VIEW IF NOT EXISTS moduluebersicht AS 
         SELECT 
             m.modulID,
-            m.semesterID,
-            s.semesterNR,
+            s.semesterNR,  
             m.modulName,
             m.modulKuerzel,
             m.modulStatus,
             m.modulEctsPunkte,
-            m.modulPruefungsform,
-            m.modulNote,
             m.modulStart
         FROM modul m
         JOIN semester s ON m.semesterID = s.semesterID;"

@@ -21,9 +21,9 @@ class Moduluebersicht(ttk.Frame):
         ttk.Label(self, text="📚 Modulübersicht", font=("Arial", 16)).pack(pady=10)
 
         self.tree = ttk.Treeview(
-            self, columns=("ID", "Semester", "Modulname", "Kürzel", "Status", "ECTS", "Prüfungsform", "Startdatum"), show="headings"
+            self, columns=("ID", "Semester", "Modulname", "Kürzel", "Status", "ECTS", "Startdatum"), show="headings"
         )
-        for spalte in ("ID", "Semester", "Modulname", "Kürzel", "Status", "ECTS", "Prüfungsform", "Startdatum"):
+        for spalte in ("ID", "Semester", "Modulname", "Kürzel", "Status", "ECTS", "Startdatum"):
             self.tree.heading(spalte, text=spalte)
 
         self.tree.pack(fill=tk.BOTH, expand=True, pady=5)
@@ -37,6 +37,7 @@ class Moduluebersicht(ttk.Frame):
     def lade_daten(self):
         """Lädt die Moduldaten aus der Datenbank."""
         self.daten = self.master.logik.get_moduluebersicht_ansicht_daten()
+        self.logger.info(f"📊 Geladene Moduldaten: {self.daten}")
         for eintrag in self.daten:
             self.tree.insert("", tk.END, values=eintrag)
 
@@ -66,9 +67,7 @@ class Moduluebersicht(ttk.Frame):
         self.modulname_entry = self.erstelle_entry(popup, "Modulname:")
         self.kuerzel_entry = self.erstelle_entry(popup, "Kürzel:")
         self.status_combobox = self.erstelle_dropdown(popup, "Status:", ["Offen", "In Bearbeitung", "Abgeschlossen"])
-        self.pruefungsform_combobox = self.erstelle_dropdown(popup, "Prüfungsform:", ["Klausur", "Portfolio", "Fachpräsentation"])
         self.ects_combobox = self.erstelle_dropdown(popup, "ECTS-Punkte:", self.ects_werte)
-        self.note_entry = self.erstelle_entry(popup, "Note (1.0 - 5.0, optional):")
 
         ttk.Label(popup, text="Startdatum auswählen:").pack(pady=5)
         self.kalender = Calendar(popup, selectmode="day", date_pattern="yyyy-mm-dd")
@@ -79,10 +78,8 @@ class Moduluebersicht(ttk.Frame):
             self.modulname_entry.insert(0, modulwerte[2])
             self.kuerzel_entry.insert(0, modulwerte[3])
             self.status_combobox.set(modulwerte[4])
-            self.pruefungsform_combobox.set(modulwerte[6])
             self.ects_combobox.set(str(modulwerte[5]))
-            self.note_entry.insert(0, modulwerte[7] if modulwerte[7] else "")
-            self.kalender.set_date(modulwerte[8])
+            self.kalender.set_date(modulwerte[6])
 
         ttk.Button(
             popup, text="💾 Speichern",
@@ -130,24 +127,14 @@ class Moduluebersicht(ttk.Frame):
         modulname = self.modulname_entry.get().strip()
         kuerzel = self.kuerzel_entry.get().strip()
         status = self.status_combobox.get()
-        pruefungsform = self.pruefungsform_combobox.get()
         ects = self.ects_combobox.get()
-        note = self.note_entry.get().strip()
         startdatum = self.kalender.get_date()
 
-        if not all([semester_id, modulname, kuerzel, status, pruefungsform, ects, startdatum]):
+        if not all([semester_id, modulname, kuerzel, status, ects, startdatum]):
             messagebox.showerror("Fehler", "Bitte alle Pflichtfelder ausfüllen!")
             return None
 
-        try:
-            note = float(note) if note else None
-            if note and (note < 1.0 or note > 5.0):
-                raise ValueError
-        except ValueError:
-            messagebox.showerror("Fehler", "Die Note muss zwischen 1.0 und 5.0 liegen.")
-            return None
-
-        return (int(semester_id), modulname, kuerzel, status, pruefungsform, note, int(ects), startdatum)
+        return (int(semester_id), modulname, kuerzel, status, int(ects), startdatum)
 
     def modul_loeschen(self):
         """Löscht ein Modul."""
@@ -160,3 +147,5 @@ class Moduluebersicht(ttk.Frame):
         if self.master.logik.set_moduluebersicht_ansicht_daten("DELETE", (modul_id,)):
             self.tree.delete(selected_item)
             self.logger.info(f"✅ Modul mit ID {modul_id} gelöscht.")
+        else:
+            messagebox.showerror("Fehler", "Das Modul konnte nicht gelöscht werden.")
