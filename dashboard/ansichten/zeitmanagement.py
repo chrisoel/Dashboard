@@ -81,10 +81,10 @@ class Zeitmanagement(ttk.Frame):
     def erstelle_wochenstunden_diagramm(self, geplante_stunden, aktuelle_stunden):
         """Erstellt ein Balkendiagramm für die geplanten und tatsächlichen Lernzeiten."""
         fig, ax = plt.subplots(figsize=(6, 4))
-        ax.bar(["Geplante Stunden", "Aktuelle Stunden"], [geplante_stunden, aktuelle_stunden], 
+        ax.bar(["Geplante Stunden", "Geleistete Stunden"], [geplante_stunden, aktuelle_stunden], 
                color=["blue", "green"])
         ax.set_ylabel("Stunden/Woche")
-        ax.set_title("Vergleich: Geplante vs. Tatsächliche Lernstunden")
+        ax.set_title("Vergleich: Geplante vs. Geleistete Lernstunden")
 
         canvas = FigureCanvasTkAgg(fig, master=self)
         canvas.draw()

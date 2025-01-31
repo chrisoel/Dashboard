@@ -15,6 +15,7 @@ class Einstellungen(ttk.Frame):
         self.daten = self.master.logik.get_einstellungen_ansicht_daten()
 
         self.erstelle_gui()
+        self.update_idletasks()
         self.lade_daten()
 
     def erstelle_gui(self):

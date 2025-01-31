@@ -8,101 +8,98 @@ class Logik:
     
     def starten(self) -> bool:
         """Startet die Logik-Schicht und verbindet zur Datenbank."""
+        self.logger.info("🚀 Starte Logik-Schicht...")
         try:
-            self.logger.info("🚀 Logik-Schicht wird gestartet...")
             erfolgreich = self.datenbank.starten()
             if erfolgreich:
                 self.logger.info("✅ Logik-Schicht erfolgreich gestartet.")
             else:
-                self.logger.error("❌ Fehler beim Starten der Logik-Schicht.")
+                self.logger.error("❌ Fehler beim Start der Logik-Schicht.")
             return erfolgreich
         except Exception as e:
-            self.logger.error(f"❌ Fehler beim Starten der Logik-Schicht: {e}")
+            self.logger.error(f"❌ Fehler beim Starten: {e}")
             return False
     
     def beenden(self) -> None:
         """Beendet die Logik-Schicht und trennt die Verbindung zur Datenbank."""
-        self.logger.info("⏹️ Logik-Schicht wird beendet...")
+        self.logger.info("⏹️ Beende Logik-Schicht...")
         self.datenbank.trennen()
         self.logger.info("✅ Logik-Schicht erfolgreich beendet.")
     
-    def get_daten(self, ansicht_name: str):
+    def get_daten_ansicht(self, ansicht_name: str):
         """Holt Daten für eine bestimmte Ansicht."""
         sql = f"SELECT * FROM {ansicht_name};"
         try:
-            self.logger.info(f"🔍 Abrufen von Daten für Ansicht '{ansicht_name}'...")
+            self.logger.info(f"🔍 Abrufe Daten für Ansicht '{ansicht_name}'...")
             ergebnisse = self.datenbank.abfragen(sql)
-            self.logger.info(f"✅ Daten erfolgreich abgerufen: {ergebnisse}")
+            self.logger.info(f"✅ Daten erfolgreich geladen: {len(ergebnisse)} Einträge.")
             return ergebnisse
         except Exception as e:
-            self.logger.error(f"❌ Fehler beim Abrufen von Daten für Ansicht '{ansicht_name}': {e}")
+            self.logger.error(f"❌ Fehler bei '{ansicht_name}': {e}")
             return []
     
-    def set_daten(self, tabelle: str, manipulation: str, daten: tuple) -> bool:
-        """Fügt Daten in eine Tabelle ein oder aktualisiert sie."""
-        self.logger.info(f"✏️ Verarbeitung einer '{manipulation.upper()}'-Operation für Tabelle '{tabelle}' mit Daten: {daten}")
+    def manipuliere_daten(self, tabelle: str, aktion: str, daten: tuple) -> bool:
+        """Führt eine Datenmanipulation (INSERT, UPDATE, DELETE) aus."""
         try:
-            spalten = self.datenbank.abfragen(f"PRAGMA table_info({tabelle})")
-            if not spalten:
-                self.logger.error(f"❌ Tabelle '{tabelle}' existiert nicht.")
-                return False
+            self.logger.info(f"✏️ Verarbeitung einer '{aktion.upper()}'-Operation für '{tabelle}' mit Daten: {daten}")
 
-            spaltennamen = [spalte[1] for spalte in spalten]
+            if aktion.upper() == "INSERT":
+                erfolgreich = self.datenbank.manipulieren(
+                    f"INSERT INTO {tabelle} VALUES ({', '.join(['?' for _ in daten])});", daten
+                )
+            elif aktion.upper() == "UPDATE":
+                spalten = self.datenbank.abfragen(f"PRAGMA table_info({tabelle})")
+                if not spalten:
+                    self.logger.error(f"❌ Tabelle '{tabelle}' existiert nicht.")
+                    return False
 
-            if manipulation.upper() == "INSERT":
-                sql = f"INSERT INTO {tabelle} ({', '.join(spaltennamen)}) VALUES ({', '.join(['?' for _ in daten])});"
-            elif manipulation.upper() == "UPDATE":
-                spalten = ", ".join([f"{key} = ?" for key in daten.keys() if key != "id"])
-                sql = f"UPDATE {tabelle} SET {spalten} WHERE modulID = ?;"
-                parameter = tuple(daten.values()) + (daten["modulID"],)
+                spaltennamen = [spalte[1] for spalte in spalten if spalte[1] != "id"]
+                sql = f"UPDATE {tabelle} SET {', '.join([f'{spalte} = ?' for spalte in spaltennamen])} WHERE id = ?;"
+                erfolgreich = self.datenbank.manipulieren(sql, daten)
+
+            elif aktion.upper() == "DELETE":
+                erfolgreich = self.datenbank.manipulieren(f"DELETE FROM {tabelle} WHERE id = ?;", (daten[0],))
+
             else:
-                self.logger.error(f"❌ Ungültige Manipulationsart: '{manipulation}'")
+                self.logger.error(f"❌ Ungültige Aktion '{aktion}' für '{tabelle}'")
                 return False
-            
-            erfolgreich = self.datenbank.manipulieren(sql, daten)
+
             if erfolgreich:
-                self.logger.info(f"✅ Manipulation erfolgreich: {manipulation} auf '{tabelle}'")
+                self.logger.info(f"✅ {aktion} erfolgreich für '{tabelle}'")
             else:
-                self.logger.warning("⚠️ Manipulation war nicht erfolgreich (z. B. keine Zeilen betroffen).")
+                self.logger.warning(f"⚠️ {aktion} nicht erfolgreich (keine Zeilen betroffen).")
             return erfolgreich
+
         except Exception as e:
-            self.logger.error(f"❌ Fehler bei der Manipulation: {e}")
+            self.logger.error(f"❌ Fehler bei '{aktion}' in '{tabelle}': {e}")
             return False
 
     def get_startbildschirm_ansicht_daten(self):
-        return self.get_daten("startbildschirm")
+        return self.get_daten_ansicht("startbildschirm")
     
     def get_moduluebersicht_ansicht_daten(self):
-        return self.get_daten("moduluebersicht")
+        return self.get_daten_ansicht("moduluebersicht")
     
     def get_studienfortschritt_ansicht_daten(self):
-        return self.get_daten("studienfortschritt")
+        return self.get_daten_ansicht("studienfortschritt")
     
     def get_zeitmanagement_ansicht_daten(self):
-        return self.get_daten("zeitmanagement")
+        return self.get_daten_ansicht("zeitmanagement")
     
     def get_einstellungen_ansicht_daten(self):
-        return self.get_daten("einstellungen")
+        return self.get_daten_ansicht("einstellungen")
     
     def set_startbildschirm_ansicht_daten(self, daten: tuple) -> bool:
         """Speichert die Studiengangsdaten ohne Arbeitstage."""
-        self.logger.info(f"✏️ Studiengang wird gespeichert: {daten}")
-
         if len(daten) != 4:
-            self.logger.error("❌ Ungültige Anzahl an Parametern für die Speicherung des Studiengangs.")
+            self.logger.error("❌ Ungültige Anzahl an Parametern für den Studiengang.")
             return False
 
-        studiengang_name, startdatum, urlaubssemester, zeitmodell = daten
-
-        return self.datenbank.studiengang_speichern(studiengang_name, startdatum, urlaubssemester, zeitmodell)
+        self.logger.info(f"✏️ Speichern des Studiengangs: {daten}")
+        return self.datenbank.studiengang_speichern(*daten)
     
     def set_moduluebersicht_ansicht_daten(self, aktion: str, daten: tuple) -> bool:
-        """
-        Bearbeitet Moduleinträge: 
-        - `INSERT`: Fügt ein neues Modul hinzu.
-        - `UPDATE`: Aktualisiert ein bestehendes Modul.
-        - `DELETE`: Löscht ein Modul.
-        """
+        """Bearbeitet Moduleinträge (INSERT, UPDATE, DELETE)."""
         try:
             if aktion.upper() == "INSERT":
                 self.logger.info(f"➕ Neues Modul wird eingefügt: {daten}")
@@ -121,36 +118,27 @@ class Logik:
                 return False
 
             if erfolg:
-                self.logger.info(f"✅ Aktion '{aktion}' erfolgreich ausgeführt.")
+                self.logger.info(f"✅ Aktion '{aktion}' erfolgreich durchgeführt.")
             else:
-                self.logger.warning(f"⚠️ Aktion '{aktion}' konnte nicht erfolgreich durchgeführt werden.")
+                self.logger.warning(f"⚠️ Aktion '{aktion}' war nicht erfolgreich.")
 
             return erfolg
 
         except Exception as e:
-            self.logger.error(f"❌ Fehler bei der Modulbearbeitung ({aktion}): {e}")
+            self.logger.error(f"❌ Fehler bei Modulbearbeitung ({aktion}): {e}")
             return False
 
-    def get_aktuelles_semester_id(self) -> int:
+    def pruefe_semester_id(self) -> int:
         """Holt die aktuelle Semester-ID (falls keine vorhanden, wird 1 genutzt)."""
         ergebnis = self.datenbank.abfragen("SELECT semesterID FROM semester ORDER BY semesterID DESC LIMIT 1;")
         return ergebnis[0][0] if ergebnis else 1
     
     def set_studienfortschritt_ansicht_daten(self, daten: tuple):
-        return self.set_daten("studienfortschritt", "INSERT", daten)
+        return self.manipuliere_daten("studienfortschritt", "INSERT", daten)
     
     def set_zeitmanagement_ansicht_daten(self, daten: tuple):
-        return self.set_daten("zeitmanagement", "INSERT", daten)
+        return self.manipuliere_daten("zeitmanagement", "INSERT", daten)
     
     def set_einstellungen_ansicht_daten(self, aktion: str, daten: tuple = None) -> bool:
-        """
-        Setzt oder löscht die Einstellungen in der Datenbank.
-
-        Aktionen:
-        - "UPDATE": Aktualisiert die Studiengangsdaten
-        - "DELETE": Löscht die gesamte Datenbank
-        
-        Parameter:
-        - daten (tuple): (studiengangName, startDatumStudium, urlaubsSemester, zeitModell) für UPDATE
-        """
+        """Setzt oder löscht die Einstellungen in der Datenbank."""
         return self.datenbank.einstellungen_verwalten(aktion, daten)
