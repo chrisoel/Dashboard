@@ -1,9 +1,58 @@
+# @file modul.yaml
+# @brief Definition der `modul`-Tabelle für die Datenbank.
+#
+# Diese Datei beschreibt die Struktur der `modul`-Tabelle in der Datenbank.
+# Sie definiert alle Spalten mit ihren Datentypen, Einschränkungen und 
+# referenziellen Integritätsregeln.
+#
+# @details
+# Die Tabelle speichert alle Module, die einem bestimmten Semester zugeordnet sind. 
+# Sie enthält Informationen wie:
+# - Modulname
+# - Modul-Kürzel (einzigartig)
+# - Status (z.B. "Offen", "In Bearbeitung", "Abgeschlossen")
+# - ECTS-Punkte (nur Vielfache von 5 erlaubt)
+# - Startdatum des Moduls
+#
+# @author CHOE
+# @date 2025-01-31
+# @version 1.0
+
 tabelle: modul
 spalten:
-  modulID: "INTEGER PRIMARY KEY AUTOINCREMENT"
-  semesterID: "INTEGER NOT NULL REFERENCES semester(semesterID) ON DELETE CASCADE"
-  modulName: "TEXT NOT NULL"
-  modulKuerzel: "TEXT NOT NULL UNIQUE"
-  modulStatus: "TEXT NOT NULL DEFAULT 'Offen'"
-  modulEctsPunkte: "INTEGER NOT NULL CHECK (modulEctsPunkte > 0 AND modulEctsPunkte % 5 = 0)"
-  modulStart: "DATE NOT NULL"
+  modulID: 
+    # @brief Primärschlüssel der Modul-Tabelle.
+    # @details Automatische ID für jedes Modul.
+    "INTEGER PRIMARY KEY AUTOINCREMENT"
+
+  semesterID: 
+    # @brief Verweist auf das zugehörige Semester.
+    # @details Stellt sicher, dass ein Modul immer einem Semester zugeordnet ist.
+    # Die ON DELETE CASCADE-Regel sorgt dafür, dass Module beim Löschen eines Semesters ebenfalls gelöscht werden.
+    "INTEGER NOT NULL REFERENCES semester(semesterID) ON DELETE CASCADE"
+
+  modulName: 
+    # @brief Name des Moduls.
+    # @details Enthält den vollständigen Namen des Moduls (z. B. "Einführung in die Informatik").
+    "TEXT NOT NULL"
+
+  modulKuerzel: 
+    # @brief Einzigartiges Kürzel für das Modul.
+    # @details Muss in der gesamten Datenbank eindeutig sein (z. B. "INF101").
+    "TEXT NOT NULL UNIQUE"
+
+  modulStatus: 
+    # @brief Status des Moduls.
+    # @details Gibt an, ob ein Modul noch offen, in Bearbeitung oder abgeschlossen ist.
+    # Standardwert: 'Offen'.
+    "TEXT NOT NULL DEFAULT 'Offen'"
+
+  modulEctsPunkte: 
+    # @brief Anzahl der ECTS-Punkte für das Modul.
+    # @details Muss größer als 0 sein und ein Vielfaches von 5 (5, 10, 15 usw.).
+    "INTEGER NOT NULL CHECK (modulEctsPunkte > 0 AND modulEctsPunkte % 5 = 0)"
+
+  modulStart: 
+    # @brief Startdatum des Moduls.
+    # @details Enthält das Datum, an dem das Modul begonnen wurde oder beginnen soll.
+    "DATE NOT NULL"

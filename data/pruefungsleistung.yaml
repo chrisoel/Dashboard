@@ -1,6 +1,44 @@
+# @file pruefungsleistung.yaml
+# @brief Definition der `pruefungsleistung`-Tabelle für die Datenbank.
+#
+# Diese Datei beschreibt die Struktur der `pruefungsleistung`-Tabelle in der Datenbank.
+# Sie speichert Informationen zu Prüfungsleistungen, die einem bestimmten Modul zugeordnet sind.
+#
+# @details
+# Die Tabelle enthält folgende Felder:
+# - Prüfungsleistungs-ID (Primärschlüssel)
+# - Zugehöriges Modul (Referenz auf die `modul`-Tabelle)
+# - Prüfungsdatum
+# - Prüfungsergebnis (optional, Wertebereich: 0 - 100 %)
+#
+# @note Eine Prüfungsleistung ist immer mit einem bestimmten Modul verknüpft.
+# Wenn ein Modul gelöscht wird, werden alle zugehörigen Prüfungsleistungen ebenfalls gelöscht (ON DELETE CASCADE).
+#
+# @author CHOE
+# @date 2025-01-31
+# @version 1.0
+
 tabelle: pruefungsleistung
 spalten:
-  pruefungsleistungID: "INTEGER PRIMARY KEY AUTOINCREMENT"
-  modulID: "INTEGER NOT NULL REFERENCES modul(modulID) ON DELETE CASCADE"
-  pruefungDatum: "DATE NOT NULL"
-  pruefungErgebnis: "FLOAT CHECK (pruefungErgebnis BETWEEN 0.00 AND 100.00 OR pruefungErgebnis IS NULL)"
+  pruefungsleistungID:
+    # @brief Primärschlüssel der Tabelle `pruefungsleistung`.
+    # @details Automatische ID für jede Prüfungsleistung.
+    "INTEGER PRIMARY KEY AUTOINCREMENT"
+
+  modulID:
+    # @brief Verweist auf das zugehörige Modul.
+    # @details Stellt sicher, dass jede Prüfungsleistung einem Modul zugeordnet ist.
+    # Die ON DELETE CASCADE-Regel sorgt dafür, dass Prüfungsleistungen automatisch gelöscht werden, 
+    # wenn das zugehörige Modul entfernt wird.
+    "INTEGER NOT NULL REFERENCES modul(modulID) ON DELETE CASCADE"
+
+  pruefungDatum:
+    # @brief Datum der Prüfung.
+    # @details Gibt das Datum an, an dem die Prüfung stattgefunden hat oder stattfinden soll.
+    "DATE NOT NULL"
+
+  pruefungErgebnis:
+    # @brief Ergebnis der Prüfung in Prozent.
+    # @details Speichert die Bewertung als Dezimalwert zwischen 0.00 und 100.00.
+    # Falls das Feld leer ist, bedeutet das, dass die Prüfung noch nicht bewertet wurde.
+    "FLOAT CHECK (pruefungErgebnis BETWEEN 0.00 AND 100.00 OR pruefungErgebnis IS NULL)"

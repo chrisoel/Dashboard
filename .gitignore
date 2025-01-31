@@ -182,3 +182,5 @@ data/*.db
 # Lokale Python-Umgebung
 venv/
 .DS_Store
+
+docu/ 

@@ -71,6 +71,7 @@ Das Dashboard basiert auf einem **4-Schichten-Modell**, das eine klare Trennung 
 - **Tkinter:** Für die grafische Benutzeroberfläche.
 - **SQLite:** Datenbanklösung für persistente Datenspeicherung.
 - **Pytest:** Testframework zur Sicherstellung der Funktionalität.
+- **Doxygen:** Automatische Dokumentationserstellung für den Code.
 
 ---
 
@@ -93,12 +94,13 @@ Das Dashboard basiert auf einem UML-Klassendiagramm, das die Entitäten `Studien
 - Auswahl der Technologien: `Python`, `Tkinter`, `SQLite`.
 
 ### 2. Erarbeitungsphase
-- Auseinandersetzung mit objektorientierter Programmierung in Python
-- Entwicklung einer ersten Gesamtarchitektur
+- Auseinandersetzung mit objektorientierter Programmierung in Python.
+- Entwicklung einer ersten Gesamtarchitektur.
 
 ### 3. Finalisierungsphase
-- Implementierung des Codes
+- Implementierung des Codes.
 - Dokumentation der Methodik und Ergebnisse.
+- Erstellung einer Installationsanleitung und eines Abstracts.
 
 ---
 
@@ -106,11 +108,81 @@ Das Dashboard basiert auf einem UML-Klassendiagramm, das die Entitäten `Studien
 
 ### Voraussetzungen
 - Python 3.10 oder höher
-- Bibliotheken: `Tkinter`, `SQLite3`, `pytest`
+- Virtuelle Umgebung empfohlen: `venv`
+- Notwendige Bibliotheken sind in `requirements.txt` enthalten.
 
 ### Installation
-1. Klone das Repository:
+1. **Repository klonen:**
    ```bash
    git clone https://github.com/chrisoel/Dashboard.git
+   cd Dashboard
+   ```
+2. **Virtuelle Umgebung erstellen (optional, empfohlen):**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Für macOS/Linux
+   venv\Scripts\activate     # Für Windows
+   ```
+3. **Abhängigkeiten installieren:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Dashboard starten:**
+   ```bash
+   python main.py
+   ```
 
-Hinweis: Es folgen noch weitere Anweisungen! Aktuell noch nicht funktionsfähig.
+### Tests ausführen
+```bash
+pytest tests/
+```
+
+---
+
+## Doxygen Dokumentation generieren
+
+Falls `Doxygen` nicht installiert ist, muss es zuerst installiert werden:
+
+- **Windows:** Über den Doxygen Installer oder `choco install doxygen`
+- **MacOS:** `brew install doxygen`
+- **Linux:** `sudo apt install doxygen`
+
+### Generieren der Dokumentation
+```bash
+doxygen Doxyfile
+```
+Die generierte Dokumentation befindet sich anschließend im `docs/`-Verzeichnis.
+
+---
+
+## GitHub Repository & Finalisierung
+
+### Projektstruktur
+```plaintext
+Dashboard/
+├── src/                # Quellcode
+├── tests/              # Unit Tests
+├── docs/               # Automatisch generierte Doxygen-Dokumentation
+├── data/               # Datenbank & YAML-Dateien
+├── requirements.txt    # Abhängigkeiten
+├── README.md           # Projektbeschreibung
+├── Doxyfile            # Doxygen Konfiguration
+└── .gitignore          # Dateien, die ignoriert werden sollen
+```
+
+### Wichtige Hinweise für die Abgabe
+- **Das `docs/`-Verzeichnis wird aus dem Git-Repository ausgeschlossen.**
+  ```bash
+  echo "docs/" >> .gitignore
+  ```
+- **Das Repository ist öffentlich zugänglich oder für die Prüfer freigegeben.**
+- **Die `requirements.txt` enthält nur die wirklich notwendigen Abhängigkeiten.**
+- **Installationsanleitung und Abstract sind als PDFs beigefügt.**
+- **Alle Daten sind als ZIP-Archiv für die Abgabe gepackt.**
+
+---
+
+## Autor
+- **Chris Oel**
+- IU Internationale Hochschule
+- `chrisoel@iu-study.org`

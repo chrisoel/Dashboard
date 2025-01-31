@@ -1,3 +1,17 @@
+"""
+@file zeitmanagement.py
+@brief Modul für die Verwaltung des Zeitmanagements innerhalb der Anwendung.
+
+Dieses Modul stellt eine grafische Oberfläche bereit, um den Fortschritt des 
+Studiums zu überwachen. Es zeigt Lernzeiten, Studienpensum und eine Prognose 
+des Studienendes an. Zudem werden Warnungen und Hinweise angezeigt, wenn das 
+Lerntempo nicht im erwarteten Bereich liegt.
+
+@author CHOE
+@date 2025-01-31
+@version 1.0
+"""
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -7,7 +21,25 @@ from datetime import datetime, timedelta
 
 
 class Zeitmanagement(ttk.Frame):
+    """
+    @brief GUI-Komponente für das Zeitmanagement.
+
+    Diese Klasse ermöglicht die Anzeige des Studienfortschritts in Bezug auf geplante 
+    und geleistete Lernzeiten. Zudem berechnet sie das voraussichtliche Studienende 
+    und warnt den Nutzer, falls das Lerntempo zu gering ist.
+
+    @extends ttk.Frame
+    """
+
     def __init__(self, master):
+        """
+        @brief Initialisiert das Zeitmanagement-Widget.
+
+        Erstellt die grafische Oberfläche für das Zeitmanagement und lädt die 
+        aktuellen Daten aus der Datenbank.
+
+        @param master Das Hauptfenster (tkinter Parent Widget).
+        """
         super().__init__(master)
         self.master = master
         self.logger = logging.getLogger("Zeitmanagement")
@@ -17,13 +49,21 @@ class Zeitmanagement(ttk.Frame):
         self.lade_daten()
 
     def erstelle_gui(self):
-        """Erstellt die GUI-Struktur für das Zeitmanagement."""
+        """
+        @brief Erstellt die GUI-Struktur für das Zeitmanagement.
+
+        Fügt Labels und Container für die Anzeige der Zeitmanagement-Informationen hinzu.
+        """
         ttk.Label(self, text="⏳ Zeitmanagement", font=("Arial", 16)).pack(pady=10)
         self.info_frame = ttk.Frame(self)
         self.info_frame.pack(pady=5, fill=tk.X)
 
     def lade_daten(self):
-        """Lädt die Daten für das Zeitmanagement aus der Datenbank."""
+        """
+        @brief Lädt die Zeitmanagement-Daten aus der Datenbank.
+
+        Falls keine Daten gefunden werden, wird eine Meldung an den Nutzer ausgegeben.
+        """
         daten = self.master.logik.get_zeitmanagement_ansicht_daten()
 
         if not daten:
@@ -34,7 +74,16 @@ class Zeitmanagement(ttk.Frame):
         self.anzeige_zeitmanagement(daten[0])
 
     def anzeige_zeitmanagement(self, daten):
-        """Zeigt das Zeitmodell und berechnet das Studienpensum."""
+        """
+        @brief Zeigt die Zeitmanagement-Daten in der GUI an.
+
+        Diese Methode zeigt Informationen zum Studiengang, Zeitmodell und Studienstart an.
+        Zudem berechnet sie das voraussichtliche Studienende und erstellt ein 
+        Diagramm zur Visualisierung der Lernzeiten.
+
+        @param daten Ein Tupel mit den Werten (studiengang, zeitmodell, studienstart, 
+                     aktuelle_ects, module_gesamt).
+        """
         studiengang, zeitmodell, studienstart, aktuelle_ects, module_gesamt = daten
 
         # GUI-Elemente
@@ -57,7 +106,15 @@ class Zeitmanagement(ttk.Frame):
         self.prüfe_lerntempo(geplante_stunden_pro_woche, aktuelle_ects_pro_woche)
 
     def berechne_studienpensum(self, zeitmodell, studienstart, aktuelle_ects, module_gesamt):
-        """Berechnet die wöchentlichen Lernzeiten und das voraussichtliche Studienende."""
+        """
+        @brief Berechnet die wöchentlichen Lernzeiten und das voraussichtliche Studienende.
+
+        @param zeitmodell Das Zeitmodell des Studiengangs (Vollzeit, Teilzeit).
+        @param studienstart Startdatum des Studiums als String ('YYYY-MM-DD').
+        @param aktuelle_ects Anzahl der bereits erreichten ECTS-Punkte.
+        @param module_gesamt Anzahl der gesamten Module im Studiengang.
+        @return Ein Tupel mit (geplante_stunden_pro_woche, aktuelle_ects_pro_woche, prognose_ende).
+        """
         gesamt_ects = 180
         semesterdauer = 6 if zeitmodell == "Vollzeit" else (8 if zeitmodell == "TeilzeitI" else 12)
         ects_pro_semester = gesamt_ects / semesterdauer
@@ -78,8 +135,14 @@ class Zeitmanagement(ttk.Frame):
 
         return geplante_stunden_pro_woche, aktuelle_ects_pro_woche, prognose_ende
 
+
     def erstelle_wochenstunden_diagramm(self, geplante_stunden, aktuelle_stunden):
-        """Erstellt ein Balkendiagramm für die geplanten und tatsächlichen Lernzeiten."""
+        """
+        @brief Erstellt ein Balkendiagramm für geplante und tatsächliche Lernzeiten.
+
+        @param geplante_stunden Geplante Lernstunden pro Woche.
+        @param aktuelle_stunden Tatsächlich geleistete Lernstunden pro Woche.
+        """
         fig, ax = plt.subplots(figsize=(6, 4))
         ax.bar(["Geplante Stunden", "Geleistete Stunden"], [geplante_stunden, aktuelle_stunden], 
                color=["blue", "green"])
@@ -91,7 +154,15 @@ class Zeitmanagement(ttk.Frame):
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, pady=10)
 
     def prüfe_lerntempo(self, geplante_stunden, aktuelle_stunden):
-        """Zeigt Hinweise oder Warnungen basierend auf dem aktuellen Lernfortschritt an."""
+        """
+        @brief Überprüft das Lerntempo und gibt Warnungen oder Hinweise aus.
+
+        Falls das Lerntempo zu niedrig ist, wird eine Warnung angezeigt.
+        Falls das Lerntempo über dem Plan liegt, wird eine positive Nachricht ausgegeben.
+
+        @param geplante_stunden Erwartete Lernzeit pro Woche.
+        @param aktuelle_stunden Tatsächlich erfasste Lernzeit pro Woche.
+        """
         if aktuelle_stunden == 0:
             messagebox.showwarning("🚨 Achtung", "Es wurde noch kein Fortschritt erfasst. Bitte Module abschließen.")
             self.logger.warning("⚠️ Keine ECTS bisher abgeschlossen.")

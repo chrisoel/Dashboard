@@ -1,8 +1,58 @@
+# @file studiengang.yaml
+# @brief Definition der `studiengang`-Tabelle für die Datenbank.
+#
+# Diese Datei beschreibt die Struktur der `studiengang`-Tabelle in der Datenbank.
+# Sie speichert grundlegende Informationen über einen Studiengang, wie Name, Startdatum,
+# Zeitmodell und die Anzahl der Urlaubssemester.
+#
+# @details
+# Die Tabelle enthält folgende Felder:
+# - Studiengang-ID (Primärschlüssel)
+# - Name des Studiengangs
+# - Startdatum des Studiums
+# - Anzahl der genehmigten Urlaubssemester
+# - Zeitmodell (z. B. Vollzeit, Teilzeit I oder Teilzeit II)
+# - Einzigartige Einschränkung, um sicherzustellen, dass nur ein Studiengang gespeichert wird
+#
+# @note
+# Die `uniqueConstraint`-Spalte stellt sicher, dass es nur einen aktiven Studiengang geben kann.
+# Falls mehrere Einträge erlaubt sein sollen, muss diese Einschränkung entfernt oder angepasst werden.
+#
+# @author CHOE
+# @date 2025-01-31
+# @version 1.0
+
 tabelle: studiengang
 spalten:
-  studiengangID: "INTEGER PRIMARY KEY AUTOINCREMENT"
-  studiengangName: "TEXT NOT NULL"
-  startDatumStudium: "DATE NOT NULL"
-  urlaubsSemester: "INTEGER NOT NULL CHECK (urlaubsSemester >= 0)"
-  zeitModell: "TEXT NOT NULL CHECK (zeitModell IN ('Vollzeit', 'TeilzeitI', 'TeilzeitII'))"
-  uniqueConstraint: "INTEGER NOT NULL DEFAULT 1 UNIQUE"
+  studiengangID:
+    # @brief Primärschlüssel der `studiengang`-Tabelle.
+    # @details Automatisch generierte ID für jeden Studiengang.
+    "INTEGER PRIMARY KEY AUTOINCREMENT"
+
+  studiengangName:
+    # @brief Name des Studiengangs.
+    # @details Speichert den offiziellen Namen des Studiengangs, z. B. "Informatik B.Sc."
+    "TEXT NOT NULL"
+
+  startDatumStudium:
+    # @brief Startdatum des Studiums.
+    # @details Gibt an, wann das Studium begonnen wurde (Format: YYYY-MM-DD).
+    "DATE NOT NULL"
+
+  urlaubsSemester:
+    # @brief Anzahl der erlaubten Urlaubssemester.
+    # @details Speichert, wie viele Urlaubssemester ein Student nehmen darf.
+    # @note Der Wert muss >= 0 sein.
+    "INTEGER NOT NULL CHECK (urlaubsSemester >= 0)"
+
+  zeitModell:
+    # @brief Studienmodell (z. B. Vollzeit oder Teilzeit).
+    # @details Definiert, ob das Studium in Vollzeit oder Teilzeit absolviert wird.
+    # @note Erlaubte Werte: "Vollzeit", "TeilzeitI", "TeilzeitII".
+    "TEXT NOT NULL CHECK (zeitModell IN ('Vollzeit', 'TeilzeitI', 'TeilzeitII'))"
+
+  uniqueConstraint:
+    # @brief Stellt sicher, dass nur ein Studiengang gespeichert wird.
+    # @details Diese Spalte hat standardmäßig den Wert `1` und ist als `UNIQUE` deklariert.
+    # @note Falls mehrere Studiengänge erlaubt sein sollen, muss diese Einschränkung entfernt oder angepasst werden.
+    "INTEGER NOT NULL DEFAULT 1 UNIQUE"

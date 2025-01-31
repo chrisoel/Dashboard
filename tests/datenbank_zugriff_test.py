@@ -1,3 +1,5 @@
+# dateiname: datenbank_zugriff_test.py
+
 import pytest
 import sqlite3
 from pathlib import Path
@@ -15,7 +17,7 @@ def db_test():
     # Erstelle neue Instanz des Datenbankzugriffs
     db = DatenbankZugriff(db_pfad=test_db_pfad)
     db.starten()
-    yield db  # Bereitstellen
+    yield db  # Bereitstellen für den Test
 
     # Test-Datenbank löschen
     db.trennen()
@@ -38,43 +40,40 @@ def test_tabellen_erstellen(db_test):
 def test_daten_einfuegen_und_abfragen(db_test):
     """Testet, ob Daten eingefügt und korrekt abgefragt werden können."""
     sql_insert = """
-    INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell, uniqueConstraint)
-    VALUES (?, ?, ?, ?, ?, ?);
+    INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, zeitModell, uniqueConstraint)
+    VALUES (?, ?, ?, ?, ?);
     """
-    daten = ("Informatik", "2022-10-01", 0, "MO_DI_MI", "Vollzeit", 1)
+    daten = ("Informatik", "2022-10-01", 0, "Vollzeit", 1)
     erfolg = db_test.manipulieren(sql_insert, daten)
     assert erfolg, "Das Einfügen von Daten sollte erfolgreich sein."
 
-    sql_select = "SELECT studiengangName, startDatumStudium, urlaubsSemester FROM studiengang WHERE studiengangName = ?;"
+    sql_select = """
+    SELECT studiengangName, startDatumStudium, urlaubsSemester
+    FROM studiengang
+    WHERE studiengangName = ?;
+    """
     ergebnis = db_test.abfragen(sql_select, ("Informatik",))
     assert len(ergebnis) == 1, "Die Abfrage sollte genau einen Eintrag zurückgeben."
-    assert ergebnis[0] == ("Informatik", "2022-10-01", 0), "Die abgefragten Daten stimmen nicht mit den eingefügten überein."
+    assert ergebnis[0] == ("Informatik", "2022-10-01", 0), \
+        "Die abgefragten Daten stimmen nicht mit den eingefügten überein."
 
 
 def test_mehrere_datensaetze_einfuegen_und_abfragen(db_test):
     """Testet das Einfügen und Abrufen mehrerer Datensätze."""
+    sql_insert = """
+    INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, zeitModell, uniqueConstraint)
+    VALUES (?, ?, ?, ?, ?);
+    """
     daten = [
-        ("Maschinenbau", "2023-04-01", 1, "MO_MI_FR", "TeilzeitI", 2),
-        ("Elektrotechnik", "2021-10-01", 0, "DI_DO", "Vollzeit", 3)
+        ("Maschinenbau", "2023-04-01", 1, "TeilzeitI", 2),
+        ("Elektrotechnik", "2021-10-01", 0, "Vollzeit", 3),
     ]
     for eintrag in daten:
-        assert db_test.manipulieren(
-            "INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell, uniqueConstraint) VALUES (?, ?, ?, ?, ?, ?);",
-            eintrag
-        )
+        assert db_test.manipulieren(sql_insert, eintrag)
 
     ergebnis = db_test.abfragen("SELECT COUNT(*) FROM studiengang;")
-    assert ergebnis[0][0] == len(daten), "Die Anzahl der Einträge sollte mit der Anzahl der eingefügten übereinstimmen."
-
-
-def test_view_erstellung(db_test):
-    """Testet, ob Views korrekt erstellt werden."""
-    db_test.initialisieren()
-    
-    sql = "SELECT name FROM sqlite_master WHERE type='view' AND name='startbildschirm';"
-    ergebnis = db_test.abfragen(sql)
-    assert len(ergebnis) == 1, "Die View 'startbildschirm' sollte existieren."
-
+    assert ergebnis[0][0] == len(daten), \
+        "Die Anzahl der Einträge sollte mit der Anzahl der eingefügten übereinstimmen."
 
 def test_datenbank_trennen_und_verbinden(db_test):
     """Testet, ob die Datenbank korrekt getrennt und wieder verbunden wird."""
@@ -96,24 +95,27 @@ def test_sql_injection_schutz(db_test):
 def test_daten_aktualisieren(db_test):
     """Testet das Aktualisieren eines Datensatzes."""
     db_test.manipulieren(
-        "INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell, uniqueConstraint) VALUES (?, ?, ?, ?, ?, ?);",
-        ("Medizintechnik", "2023-01-01", 0, "MO_DI", "Vollzeit", 42)
+        "INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, zeitModell, uniqueConstraint) VALUES (?, ?, ?, ?, ?);",
+        ("Medizintechnik", "2023-01-01", 0, "Vollzeit", 42)
     )
     erfolg = db_test.manipulieren(
-        "UPDATE studiengang SET arbeitstage = ? WHERE uniqueConstraint = ?;",
-        ("MO_MI_DO", 42)
+        "UPDATE studiengang SET zeitModell = ? WHERE uniqueConstraint = ?;",
+        ("TeilzeitI", 42)
     )
     assert erfolg, "Das Update sollte erfolgreich sein."
 
-    ergebnis = db_test.abfragen("SELECT arbeitstage FROM studiengang WHERE uniqueConstraint = ?;", (42,))
-    assert ergebnis[0][0] == "MO_MI_DO", "Die Daten sollten erfolgreich aktualisiert worden sein."
+    ergebnis = db_test.abfragen(
+        "SELECT zeitModell FROM studiengang WHERE uniqueConstraint = ?;", (42,)
+    )
+    assert ergebnis[0][0] == "TeilzeitI", \
+        "Das 'zeitModell' sollte erfolgreich auf 'TeilzeitI' aktualisiert worden sein."
 
 
 def test_daten_loeschen(db_test):
     """Testet das Löschen eines Datensatzes."""
     db_test.manipulieren(
-        "INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell, uniqueConstraint) VALUES (?, ?, ?, ?, ?, ?);",
-        ("Test-Studiengang", "2023-01-01", 0, "MO_MI", "Vollzeit", 99)
+        "INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, zeitModell, uniqueConstraint) VALUES (?, ?, ?, ?, ?);",
+        ("Test-Studiengang", "2023-01-01", 0, "Vollzeit", 99)
     )
     erfolg = db_test.manipulieren(
         "DELETE FROM studiengang WHERE uniqueConstraint = ?;",

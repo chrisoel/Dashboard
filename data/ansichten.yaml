@@ -1,24 +1,50 @@
+# @file ansichten.yaml
+# @brief Definition der SQL-Views für die Anwendung.
+#
+# Diese YAML-Datei enthält SQL-Views, die verschiedene Datenbankansichten 
+# für das IU Dashboard bereitstellen. Die Views helfen dabei, strukturierte 
+# und gefilterte Daten für die Benutzeroberfläche bereitzustellen.
+#
+# @details 
+# Die Datei definiert fünf zentrale Views:
+# - **startbildschirm**: Übersicht über Studiengang und Startdatum.
+# - **moduluebersicht**: Anzeige der Module mit Semesterzuordnung.
+# - **studienfortschritt**: Verlauf des Studienfortschritts.
+# - **zeitmanagement**: Analyse der Zeitnutzung im Studium.
+# - **einstellungen**: Zugriff auf gespeicherte Benutzereinstellungen.
+#
+# Diese Views erleichtern die Datenabfrage und -darstellung in der Anwendung.
+
 views:
   startbildschirm:
-    - "CREATE VIEW IF NOT EXISTS startbildschirm AS 
-        SELECT studiengangName, startDatumStudium 
-        FROM studiengang;"
-        
+    - |
+      # @brief View für den Startbildschirm
+      # @details Diese View zeigt den Studiengangsnamen und das Startdatum an.
+      CREATE VIEW IF NOT EXISTS startbildschirm AS 
+      SELECT studiengangName, startDatumStudium 
+      FROM studiengang;
+
   moduluebersicht:
-    - "CREATE VIEW IF NOT EXISTS moduluebersicht AS 
-        SELECT 
-            m.modulID,
-            s.semesterNR,  
-            m.modulName,
-            m.modulKuerzel,
-            m.modulStatus,
-            m.modulEctsPunkte,
-            m.modulStart
-        FROM modul m
-        JOIN semester s ON m.semesterID = s.semesterID;"
+    - |
+      # @brief View für die Modulübersicht
+      # @details Diese View zeigt alle Module mit ihrem Semester, Namen, Status und ECTS-Punkten.
+      CREATE VIEW IF NOT EXISTS moduluebersicht AS 
+      SELECT 
+          m.modulID,
+          s.semesterNR,  
+          m.modulName,
+          m.modulKuerzel,
+          m.modulStatus,
+          m.modulEctsPunkte,
+          m.modulStart
+      FROM modul m
+      JOIN semester s ON m.semesterID = s.semesterID;
 
   studienfortschritt:
     - |
+      # @brief View für den Studienfortschritt
+      # @details Diese View kombiniert abgeschlossene, laufende und offene Module 
+      # mit dem Studienstartdatum, um den Fortschritt zu berechnen.
       CREATE VIEW IF NOT EXISTS studienfortschritt AS 
       SELECT 
           v.modulOffen, 
@@ -31,6 +57,8 @@ views:
 
   zeitmanagement:
     - |
+      # @brief View für das Zeitmanagement
+      # @details Berechnet die Anzahl abgeschlossener ECTS und Module für die Studienplanung.
       CREATE VIEW IF NOT EXISTS zeitmanagement AS 
       SELECT 
           s.studiengangName, 
@@ -44,6 +72,9 @@ views:
       WHERE s.uniqueConstraint = 1;
 
   einstellungen:
-    - "CREATE VIEW IF NOT EXISTS einstellungen AS 
-        SELECT studiengangName, startDatumStudium, urlaubsSemester, zeitModell 
-        FROM studiengang;"
+    - |
+      # @brief View für die Anwendungseinstellungen
+      # @details Diese View liefert gespeicherte Benutzereinstellungen wie Studiengang, Startdatum und Zeitmodell.
+      CREATE VIEW IF NOT EXISTS einstellungen AS 
+      SELECT studiengangName, startDatumStudium, urlaubsSemester, zeitModell 
+      FROM studiengang;

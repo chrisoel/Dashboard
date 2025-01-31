@@ -1,10 +1,42 @@
+"""
+@file moduluebersicht.py
+@brief Modul zur Verwaltung der Module in der Anwendung.
+
+Dieses Modul stellt eine grafische Benutzeroberfläche bereit, um die Module des 
+Studiums zu verwalten. Der Benutzer kann neue Module hinzufügen, vorhandene bearbeiten 
+und löschen. Zudem werden die Moduldaten aus der Datenbank geladen und angezeigt.
+
+Die Anwendung verwendet eine `Treeview`, um die Module in tabellarischer Form darzustellen.
+
+@author CHOE
+@date 2025-01-31
+@version 1.0
+"""
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import Calendar
 import logging
 
 class Moduluebersicht(ttk.Frame):
+    """
+    @brief GUI-Komponente für die Modulübersicht.
+
+    Diese Klasse stellt eine Oberfläche zur Verwaltung von Studienmodulen bereit. 
+    Module können hinzugefügt, bearbeitet oder gelöscht werden. Zudem wird eine 
+    tabellarische Ansicht der gespeicherten Module angezeigt.
+
+    @extends ttk.Frame
+    """
+
     def __init__(self, master):
+        """
+        @brief Initialisiert das Modulübersicht-Widget.
+
+        Erstellt die Benutzeroberfläche für die Modulverwaltung und lädt bestehende Daten.
+
+        @param master Das Hauptfenster (tkinter Parent Widget).
+        """
         super().__init__(master)
         self.master = master
         self.logger = logging.getLogger("Moduluebersicht")
@@ -17,7 +49,12 @@ class Moduluebersicht(ttk.Frame):
         self.lade_daten()
 
     def erstelle_gui(self):
-        """Erstellt das Hauptlayout für die Modulübersicht."""
+        """
+        @brief Erstellt das Hauptlayout für die Modulübersicht.
+
+        Erstellt eine `Treeview`, um die Module anzuzeigen, sowie Buttons 
+        zur Verwaltung der Module.
+        """
         ttk.Label(self, text="📚 Modulübersicht", font=("Arial", 16)).pack(pady=10)
 
         self.tree = ttk.Treeview(
@@ -35,19 +72,30 @@ class Moduluebersicht(ttk.Frame):
         ttk.Button(button_frame, text="🗑️ Modul löschen", command=self.modul_loeschen).pack(side=tk.LEFT, padx=5)
 
     def lade_daten(self):
-        """Lädt die Moduldaten aus der Datenbank."""
+        """
+        @brief Lädt die Moduldaten aus der Datenbank.
+
+        Falls keine Daten vorhanden sind, bleibt die Tabelle leer.
+        """
         self.daten = self.master.logik.get_moduluebersicht_ansicht_daten()
         self.logger.info(f"📊 Geladene Moduldaten: {self.daten}")
         for eintrag in self.daten:
             self.tree.insert("", tk.END, values=eintrag)
 
     def modul_hinzufuegen_popup(self):
-        """Öffnet das Modul-Hinzufügen-Popup."""
+        """
+        @brief Öffnet ein Popup-Fenster zum Hinzufügen eines neuen Moduls.
+        """
         self.logger.info("📌 Öffne Modul-Hinzufügen-Dialog.")
         self.erstelle_popup("Neues Modul hinzufügen", "INSERT")
 
+
     def modul_bearbeiten_popup(self):
-        """Öffnet das Modul-Bearbeiten-Popup."""
+        """
+        @brief Öffnet ein Popup-Fenster zum Bearbeiten eines vorhandenen Moduls.
+
+        Falls kein Modul ausgewählt ist, wird eine Fehlermeldung ausgegeben.
+        """
         selected_item = self.tree.selection()
         if not selected_item:
             messagebox.showerror("Fehler", "Bitte ein Modul auswählen.")
@@ -58,7 +106,13 @@ class Moduluebersicht(ttk.Frame):
         self.erstelle_popup("Modul bearbeiten", "UPDATE", values)
 
     def erstelle_popup(self, titel, aktion, modulwerte=None):
-        """Erstellt ein Popup-Fenster für Modul-Eingaben."""
+        """
+        @brief Erstellt ein Popup-Fenster für Modul-Eingaben.
+
+        @param titel Titel des Popup-Fensters.
+        @param aktion Art der Aktion ("INSERT" oder "UPDATE").
+        @param modulwerte Falls vorhanden, enthält es die bestehenden Modulwerte.
+        """
         popup = tk.Toplevel(self)
         popup.title(titel)
         popup.geometry("400x600")
@@ -73,13 +127,16 @@ class Moduluebersicht(ttk.Frame):
         self.kalender = Calendar(popup, selectmode="day", date_pattern="yyyy-mm-dd")
         self.kalender.pack(pady=5)
 
-        if modulwerte:
-            self.semester_combobox.set(str(modulwerte[1]))
-            self.modulname_entry.insert(0, modulwerte[2])
-            self.kuerzel_entry.insert(0, modulwerte[3])
-            self.status_combobox.set(modulwerte[4])
-            self.ects_combobox.set(str(modulwerte[5]))
-            self.kalender.set_date(modulwerte[6])
+        try:
+            if modulwerte:
+                self.semester_combobox.set(str(modulwerte[1]))
+                self.modulname_entry.insert(0, modulwerte[2])
+                self.kuerzel_entry.insert(0, modulwerte[3])
+                self.status_combobox.set(modulwerte[4])
+                self.ects_combobox.set(str(modulwerte[5]))
+                self.kalender.set_date(modulwerte[6])
+        except Exception as e:
+            self.logger.error(f"Fehler beim Setzen des Datums oder Befüllen der Felder: {e}")
 
         ttk.Button(
             popup, text="💾 Speichern",
@@ -87,21 +144,44 @@ class Moduluebersicht(ttk.Frame):
         ).pack(pady=10)
 
     def erstelle_entry(self, popup, text):
-        """Erstellt ein Eingabefeld mit Label."""
+        """
+        @brief Erstellt ein Eingabefeld mit zugehörigem Label.
+
+        Diese Methode fügt ein Label und ein Eingabefeld zu einem gegebenen Popup-Fenster hinzu.
+
+        @param popup Das `Toplevel`-Fenster, in dem das Eingabefeld erstellt wird.
+        @param text Der Beschriftungstext für das Eingabefeld.
+        @return Ein `ttk.Entry`-Widget zur Texteingabe.
+        """
         ttk.Label(popup, text=text).pack(pady=5)
         entry = ttk.Entry(popup)
         entry.pack(pady=5)
         return entry
 
     def erstelle_dropdown(self, popup, text, values):
-        """Erstellt ein Dropdown-Menü mit Label."""
+        """
+        @brief Erstellt ein Dropdown-Menü mit zugehörigem Label.
+
+        Diese Methode fügt ein Label und ein Dropdown-Menü (Combobox) zu einem gegebenen Popup-Fenster hinzu.
+
+        @param popup Das `Toplevel`-Fenster, in dem das Dropdown-Menü erstellt wird.
+        @param text Der Beschriftungstext für das Dropdown-Menü.
+        @param values Eine Liste mit Auswahlmöglichkeiten für das Dropdown-Menü.
+        @return Ein `ttk.Combobox`-Widget zur Auswahl eines Wertes.
+        """
         ttk.Label(popup, text=text).pack(pady=5)
         dropdown = ttk.Combobox(popup, values=values, state="readonly")
         dropdown.pack(pady=5)
         return dropdown
 
     def modul_speichern(self, popup, aktion, modul_id):
-        """Validiert Eingaben und speichert das Modul."""
+        """
+        @brief Validiert Eingaben und speichert das Modul.
+
+        @param popup Das geöffnete Popup-Fenster.
+        @param aktion Art der Aktion ("INSERT" oder "UPDATE").
+        @param modul_id Die Modul-ID (bei Update erforderlich).
+        """
         daten = self.validiere_eingaben()
         if not daten:
             return
@@ -121,8 +201,13 @@ class Moduluebersicht(ttk.Frame):
             self.logger.error("❌ Fehler beim Speichern des Moduls.")
             messagebox.showerror("Fehler", "Modul konnte nicht gespeichert werden.")
 
+
     def validiere_eingaben(self):
-        """Überprüft die Benutzereingaben auf Korrektheit."""
+        """
+        @brief Überprüft die Benutzereingaben auf Korrektheit.
+
+        @return Ein Tupel mit validierten Daten oder None bei Fehlern.
+        """
         semester_id = self.semester_combobox.get()
         modulname = self.modulname_entry.get().strip()
         kuerzel = self.kuerzel_entry.get().strip()
@@ -137,7 +222,11 @@ class Moduluebersicht(ttk.Frame):
         return (int(semester_id), modulname, kuerzel, status, int(ects), startdatum)
 
     def modul_loeschen(self):
-        """Löscht ein Modul."""
+        """
+        @brief Löscht ein Modul aus der Datenbank.
+
+        Falls kein Modul ausgewählt wurde, wird eine Fehlermeldung ausgegeben.
+        """
         selected_item = self.tree.selection()
         if not selected_item:
             messagebox.showerror("Fehler", "Bitte ein Modul auswählen.")

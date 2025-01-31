@@ -1,7 +1,53 @@
+# @file verlauf.yaml
+# @brief Definition der `verlauf`-Tabelle für die Datenbank.
+#
+# Diese Datei beschreibt die Struktur der `verlauf`-Tabelle in der Datenbank.
+# Sie speichert den Studienfortschritt über die Zeit, indem sie täglich 
+# die Anzahl der offenen, in Bearbeitung befindlichen und abgeschlossenen Module speichert.
+#
+# @details
+# Die Tabelle enthält folgende Felder:
+# - Verlaufs-ID (Primärschlüssel)
+# - Anzahl der offenen Module
+# - Anzahl der Module in Bearbeitung
+# - Anzahl der abgeschlossenen Module
+# - Zeitpunkt der Erfassung (einzigartig)
+#
+# @note
+# Die `zeitpunkt`-Spalte stellt sicher, dass jeder Tag nur einmal erfasst wird.
+# Falls mehrere Einträge pro Tag erlaubt sein sollen, muss die `UNIQUE`-Einschränkung entfernt oder angepasst werden.
+#
+# @author CHOE
+# @date 2025-01-31
+# @version 1.0
+
 tabelle: verlauf
 spalten:
-  verlaufID: "INTEGER PRIMARY KEY AUTOINCREMENT"
-  modulOffen: "INTEGER NOT NULL DEFAULT 0"
-  modulInBearbeitung: "INTEGER NOT NULL DEFAULT 0"
-  modulAbgeschlossen: "INTEGER NOT NULL DEFAULT 0"
-  zeitpunkt: "DATE NOT NULL UNIQUE"
+  verlaufID:
+    # @brief Primärschlüssel der `verlauf`-Tabelle.
+    # @details Automatisch generierte ID für jeden Verlaufseintrag.
+    "INTEGER PRIMARY KEY AUTOINCREMENT"
+
+  modulOffen:
+    # @brief Anzahl der offenen Module an einem bestimmten Tag.
+    # @details Speichert, wie viele Module sich im Status "Offen" befinden.
+    # @note Standardwert: `0`.
+    "INTEGER NOT NULL DEFAULT 0"
+
+  modulInBearbeitung:
+    # @brief Anzahl der Module, die in Bearbeitung sind.
+    # @details Speichert, wie viele Module sich im Status "In Bearbeitung" befinden.
+    # @note Standardwert: `0`.
+    "INTEGER NOT NULL DEFAULT 0"
+
+  modulAbgeschlossen:
+    # @brief Anzahl der abgeschlossenen Module.
+    # @details Speichert, wie viele Module erfolgreich abgeschlossen wurden.
+    # @note Standardwert: `0`.
+    "INTEGER NOT NULL DEFAULT 0"
+
+  zeitpunkt:
+    # @brief Zeitpunkt der Erfassung des Studienfortschritts.
+    # @details Speichert das Datum des Verlaufs (Format: YYYY-MM-DD).
+    # @note Muss eindeutig sein (`UNIQUE`), damit pro Tag nur ein Eintrag existiert.
+    "DATE NOT NULL UNIQUE"

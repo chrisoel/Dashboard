@@ -1,3 +1,19 @@
+"""
+@file startbildschirm.py
+@brief Modul für den Startbildschirm der Anwendung.
+
+Dieses Modul stellt die grafische Benutzeroberfläche für den Startbildschirm bereit.
+Falls der Benutzer noch keinen Studienstart eingegeben hat, wird eine Eingabemaske 
+angezeigt. Ansonsten werden die aktuellen Studiengangsdaten dargestellt.
+
+Der Benutzer kann seinen Studiengangsnamen, das Startdatum, Urlaubssemester und das 
+Zeitmodell eingeben. Die Daten werden validiert und in der Datenbank gespeichert.
+
+@author CHOE
+@date 2025-01-31
+@version 1.0
+"""
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import Calendar
@@ -7,7 +23,24 @@ import logging
 
 
 class Startbildschirm(ttk.Frame):
+    """
+    @brief GUI-Komponente für den Startbildschirm.
+
+    Diese Klasse verwaltet den Startbildschirm der Anwendung. Falls der Benutzer 
+    noch keinen Studienstart eingegeben hat, wird eine Eingabemaske angezeigt. 
+    Ansonsten wird eine Tabelle mit den gespeicherten Studiendaten angezeigt.
+
+    @extends ttk.Frame
+    """
+
     def __init__(self, master):
+        """
+        @brief Initialisiert das Startbildschirm-Widget.
+
+        Erstellt die grafische Benutzeroberfläche und lädt bestehende Studiendaten.
+
+        @param master Das Hauptfenster (tkinter Parent Widget).
+        """
         super().__init__(master)
         self.master = master
         self.logger = logging.getLogger("Startbildschirm")
@@ -23,11 +56,19 @@ class Startbildschirm(ttk.Frame):
         self.lade_daten()
 
     def erstelle_gui(self):
-        """Erstellt die Grundstruktur des Startbildschirms."""
+        """
+        @brief Erstellt die Grundstruktur des Startbildschirms.
+
+        Fügt Labels und Container für die Anzeige oder Eingabe von Studieninformationen hinzu.
+        """
         ttk.Label(self, text="Willkommen im IU Dashboard!", font=("Arial", 16)).pack(pady=10)
 
     def lade_daten(self):
-        """Lädt die Studiendaten und zeigt die passende Ansicht an."""
+        """
+        @brief Lädt die Studiendaten aus der Datenbank.
+
+        Falls kein Studienstart hinterlegt ist, wird der Benutzer zur Eingabe aufgefordert.
+        """
         daten = self.master.logik.get_startbildschirm_ansicht_daten()
 
         if not daten or not daten[0][1]:
@@ -38,7 +79,11 @@ class Startbildschirm(ttk.Frame):
             self.zeige_studiengang(daten)
 
     def zeige_studiengang(self, daten):
-        """Zeigt die vorhandenen Studiengangsdaten als Tabelle an."""
+        """
+        @brief Zeigt die gespeicherten Studiengangsdaten als Tabelle an.
+
+        @param daten Liste mit Tupeln, die die Studiengangsdaten enthalten.
+        """
         tree = ttk.Treeview(self, columns=("Name", "Startdatum"), show="headings")
         tree.heading("Name", text="Studiengang")
         tree.heading("Startdatum", text="Startdatum")
@@ -48,7 +93,12 @@ class Startbildschirm(ttk.Frame):
             tree.insert("", tk.END, values=eintrag)
 
     def zeige_studienstart_eingabe(self):
-        """Zeigt das Eingabeformular für den Studienstart an."""
+        """
+        @brief Zeigt das Eingabeformular für den Studienstart an.
+
+        Der Benutzer kann hier seinen Studiengangsnamen, das Startdatum, 
+        Urlaubssemester und das Zeitmodell auswählen.
+        """
         frame = ttk.Frame(self)
         frame.pack(pady=20)
 
@@ -62,21 +112,39 @@ class Startbildschirm(ttk.Frame):
         ttk.Button(frame, text="💾 Speichern", command=self.speichere_studienstart).pack(pady=10)
 
     def erstelle_eingabezeile(self, frame, text):
-        """Erstellt eine Eingabezeile mit Label."""
+        """
+        @brief Erstellt eine Eingabezeile mit einem Label.
+
+        @param frame Das tkinter-Frame, in dem das Eingabefeld erstellt wird.
+        @param text Der Label-Text für das Eingabefeld.
+        @return Ein Entry-Widget zur Texteingabe.
+        """
         ttk.Label(frame, text=text).pack()
         entry = ttk.Entry(frame)
         entry.pack(pady=5)
         return entry
 
     def erstelle_kalender(self, frame):
-        """Erstellt ein Kalender-Widget zur Datumsauswahl."""
+        """
+        @brief Erstellt ein Kalender-Widget zur Datumsauswahl.
+
+        @param frame Das tkinter-Frame, in dem das Kalender-Widget erstellt wird.
+        @return Ein Calendar-Widget.
+        """
         ttk.Label(frame, text="Startdatum auswählen:").pack()
         kalender = Calendar(frame, selectmode="day", date_pattern="yyyy-mm-dd")
         kalender.pack(pady=5)
         return kalender
 
     def erstelle_urlaubssemester_optionen(self, frame):
-        """Erstellt die Auswahloptionen für Urlaubssemester."""
+        """
+        @brief Erstellt die Auswahloptionen für Urlaubssemester.
+
+        Der Benutzer kann bis zu zwei Urlaubssemester auswählen.
+
+        @param frame Das tkinter-Frame, in dem die Checkboxen erstellt werden.
+        @return Eine Liste von BooleanVar-Objekten für die Checkboxen.
+        """
         ttk.Label(frame, text="Urlaubssemester: (max. 2)").pack()
         vars_ = [tk.BooleanVar() for _ in range(2)]
 
@@ -85,8 +153,14 @@ class Startbildschirm(ttk.Frame):
 
         return vars_
 
+
     def erstelle_zeitmodell_dropdown(self, frame):
-        """Erstellt das Dropdown-Menü zur Auswahl des Zeitmodells."""
+        """
+        @brief Erstellt ein Dropdown-Menü zur Auswahl des Zeitmodells.
+
+        @param frame Das tkinter-Frame, in dem das Dropdown-Menü erstellt wird.
+        @return Eine StringVar-Variable für das gewählte Zeitmodell.
+        """
         ttk.Label(frame, text="Zeitmodell auswählen:").pack(pady=5)
         zeitmodell_var = tk.StringVar()
         dropdown = ttk.Combobox(frame, textvariable=zeitmodell_var, state="readonly")
@@ -95,7 +169,11 @@ class Startbildschirm(ttk.Frame):
         return zeitmodell_var
 
     def update_urlaubssemester(self):
-        """Stellt sicher, dass maximal 2 Urlaubssemester ausgewählt werden können."""
+        """
+        @brief Stellt sicher, dass maximal 2 Urlaubssemester ausgewählt werden können.
+
+        Falls mehr als zwei Checkboxen aktiviert sind, wird die zuletzt aktivierte deaktiviert.
+        """
         aktive = [var for var in self.urlaubssemester_vars if var.get()]
         if len(aktive) > 2:
             self.logger.warning("⚠️ Mehr als 2 Urlaubssemester gewählt, deaktiviere zuletzt aktivierten.")
@@ -105,7 +183,12 @@ class Startbildschirm(ttk.Frame):
                     break
 
     def speichere_studienstart(self):
-        """Speichert die eingegebenen Studiendaten und überprüft die Eingaben."""
+        """
+        @brief Speichert die eingegebenen Studiendaten und überprüft die Eingaben.
+
+        Falls die Eingaben gültig sind, wird der Studienstart in der Datenbank gespeichert
+        und die Ansicht zur Modulübersicht gewechselt.
+        """
         studiengang = self.studiengang_entry.get().strip()
         datum_text = self.kalender.get_date()
         zeitmodell = self.zeitmodell_var.get()
@@ -127,7 +210,18 @@ class Startbildschirm(ttk.Frame):
             messagebox.showerror("Fehler", "Es gab ein Problem beim Speichern der Daten. Bitte erneut versuchen.")
 
     def validiere_eingaben(self, studiengang, zeitmodell, datum_text):
-        """Überprüft die Benutzereingaben auf Fehler."""
+        """
+        @brief Überprüft die Benutzereingaben auf Fehler.
+
+        Diese Methode überprüft, ob alle erforderlichen Eingaben für den Studienstart 
+        korrekt sind. Falls eine Eingabe fehlt oder fehlerhaft ist, wird eine entsprechende 
+        Fehlermeldung angezeigt.
+
+        @param studiengang Der eingegebene Studiengangsname als String.
+        @param zeitmodell Das gewählte Zeitmodell als String.
+        @param datum_text Das ausgewählte Startdatum als String im Format 'YYYY-MM-DD'.
+        @return True, wenn alle Eingaben gültig sind, sonst False.
+        """
         if not studiengang:
             self.logger.error("❌ Fehler: Kein Studiengang eingegeben.")
             messagebox.showerror("Fehler", "Bitte geben Sie einen Studiengangsnamen ein.")

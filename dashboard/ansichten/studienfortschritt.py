@@ -1,3 +1,16 @@
+"""
+@file studienfortschritt.py
+@brief Modul zur Visualisierung des Studienfortschritts.
+
+Dieses Modul stellt eine grafische Oberfläche bereit, um den Fortschritt des Studiums 
+über die Zeit zu visualisieren. Die Daten werden aus der Datenbank geladen und 
+in einem Liniendiagramm dargestellt.
+
+@author CHOE
+@date 2025-01-31
+@version 1.0
+"""
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -10,7 +23,24 @@ import numpy as np
 
 
 class Studienfortschritt(ttk.Frame):
+    """
+    @brief GUI-Komponente zur Darstellung des Studienfortschritts.
+
+    Diese Klasse ermöglicht die Anzeige des Fortschritts im Studium anhand eines Diagramms.
+    Die Verlaufsdaten werden aus der Datenbank geladen, verarbeitet und visualisiert.
+
+    @extends ttk.Frame
+    """
+
     def __init__(self, master):
+        """
+        @brief Initialisiert das Studienfortschritt-Widget.
+
+        Erstellt die grafische Oberfläche für die Anzeige des Studienfortschritts 
+        und lädt die Verlaufsdaten aus der Datenbank.
+
+        @param master Das Hauptfenster (tkinter Parent Widget).
+        """
         super().__init__(master)
         self.master = master
         self.logger = logging.getLogger("Studienfortschritt")
@@ -20,11 +50,19 @@ class Studienfortschritt(ttk.Frame):
         self.lade_daten()
 
     def erstelle_gui(self):
-        """Erstellt die GUI-Struktur für den Studienfortschritt."""
+        """
+        @brief Erstellt die GUI-Struktur für den Studienfortschritt.
+
+        Fügt Labels zur Anzeige der Fortschrittsinformationen hinzu.
+        """
         ttk.Label(self, text="📈 Studienfortschritt", font=("Arial", 16)).pack(pady=10)
 
     def lade_daten(self):
-        """Lädt die Verlaufsdaten aus der Datenbank und verarbeitet sie."""
+        """
+        @brief Lädt die Verlaufsdaten aus der Datenbank und verarbeitet sie.
+
+        Falls keine Daten gefunden werden, wird eine Meldung an den Nutzer ausgegeben.
+        """
         daten = self.master.logik.get_studienfortschritt_ansicht_daten()
 
         if not daten:
@@ -36,7 +74,12 @@ class Studienfortschritt(ttk.Frame):
         self.erstelle_fortschritt_diagramm(x_werte, y_offen, y_bearbeitung, y_abgeschlossen)
 
     def verarbeite_daten(self, daten):
-        """Konvertiert die Rohdaten in ein geeignetes Format für die Darstellung."""
+        """
+        @brief Konvertiert die Rohdaten in ein geeignetes Format für die Darstellung.
+
+        @param daten Liste mit Verlaufswerten aus der Datenbank.
+        @return Ein Tupel mit Listen: (x_werte, y_offen, y_bearbeitung, y_abgeschlossen).
+        """
         self.logger.info("📊 Verarbeite Verlaufsdaten für das Diagramm...")
         daten.sort(key=lambda x: x[3])  # Sortierung nach Datum
 
@@ -48,7 +91,17 @@ class Studienfortschritt(ttk.Frame):
         return x_werte, y_offen, y_bearbeitung, y_abgeschlossen
 
     def erstelle_fortschritt_diagramm(self, x_werte, y_offen, y_bearbeitung, y_abgeschlossen):
-        """Erstellt das Diagramm für den Studienfortschritt."""
+        """
+        @brief Erstellt das Diagramm für den Studienfortschritt.
+
+        Diese Methode visualisiert die Anzahl der offenen, in Bearbeitung befindlichen 
+        und abgeschlossenen Module über die Zeit.
+
+        @param x_werte Liste mit Datumseinträgen.
+        @param y_offen Anzahl offener Module pro Datum.
+        @param y_bearbeitung Anzahl der Module in Bearbeitung pro Datum.
+        @param y_abgeschlossen Anzahl abgeschlossener Module pro Datum.
+        """
         self.logger.info("📊 Erstelle Diagramm für Studienfortschritt...")
 
         fig, ax = plt.subplots(figsize=(8, 5))

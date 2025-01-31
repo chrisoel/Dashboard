@@ -1,6 +1,45 @@
+# @file semester.yaml
+# @brief Definition der `semester`-Tabelle für die Datenbank.
+#
+# Diese Datei beschreibt die Struktur der `semester`-Tabelle in der Datenbank.
+# Sie speichert Informationen über die einzelnen Semester eines Studiengangs.
+#
+# @details
+# Die Tabelle enthält folgende Felder:
+# - Semester-ID (Primärschlüssel)
+# - Zugehöriger Studiengang (Referenz auf die `studiengang`-Tabelle)
+# - Semester-Nummer (eindeutig pro Studiengang)
+# - Markierung, ob es sich um ein Urlaubssemester handelt
+#
+# @note Jedes Semester gehört genau zu einem Studiengang. Falls ein Studiengang gelöscht wird,
+# werden alle zugehörigen Semester automatisch entfernt (ON DELETE CASCADE).
+#
+# @author CHOE
+# @date 2025-01-31
+# @version 1.0
+
 tabelle: semester
 spalten:
-  semesterID: "INTEGER PRIMARY KEY AUTOINCREMENT"
-  studiengangID: "INTEGER NOT NULL REFERENCES studiengang(studiengangID) ON DELETE CASCADE"
-  semesterNR: "INTEGER NOT NULL CHECK (semesterNR > 0) UNIQUE"
-  istUrlaubSemester: "INTEGER NOT NULL"
+  semesterID:
+    # @brief Primärschlüssel der `semester`-Tabelle.
+    # @details Automatische ID für jedes Semester.
+    "INTEGER PRIMARY KEY AUTOINCREMENT"
+
+  studiengangID:
+    # @brief Referenziert den Studiengang, zu dem das Semester gehört.
+    # @details Diese Fremdschlüssel-Beziehung stellt sicher, dass ein Semester nur existieren kann,
+    # wenn es einem Studiengang zugeordnet ist. Falls der Studiengang gelöscht wird,
+    # werden alle zugehörigen Semester ebenfalls gelöscht (ON DELETE CASCADE).
+    "INTEGER NOT NULL REFERENCES studiengang(studiengangID) ON DELETE CASCADE"
+
+  semesterNR:
+    # @brief Nummer des Semesters innerhalb des Studiengangs.
+    # @details Definiert die Reihenfolge der Semester (z. B. 1 für das erste Semester).
+    # @note Die Semester-Nummer muss größer als 0 sein und innerhalb eines Studiengangs einzigartig sein.
+    "INTEGER NOT NULL CHECK (semesterNR > 0) UNIQUE"
+
+  istUrlaubSemester:
+    # @brief Gibt an, ob das Semester ein Urlaubssemester ist.
+    # @details Ein Wert von `1` bedeutet, dass es sich um ein Urlaubssemester handelt,
+    # während `0` ein reguläres Semester bedeutet.
+    "INTEGER NOT NULL"
