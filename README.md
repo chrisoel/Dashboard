@@ -184,5 +184,6 @@ Dashboard/
 
 ## Autor
 - **Chris Oel**
+- https://github.com/chrisoel/Dashboard
 - IU Internationale Hochschule
 - `chrisoel@iu-study.org`

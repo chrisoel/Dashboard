@@ -1,134 +1,151 @@
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../dashboard')))
+#!/usr/bin/env python3
+"""
+Erstellt eine neue SQLite-Datenbank 'test_studienfortschritt.db' mit gleichem Tabellenaufbau 
+(weniger Constraints) und füllt sie mit Zufallsdaten, damit man z.B. im Studienfortschritt 
+eine mehrtägige Kurve sieht.
+"""
 
-import shutil
+import os
+import sqlite3
 import random
-from datetime import date, timedelta
+import datetime
 from pathlib import Path
 
-from datenbank_zugriff import DatenbankZugriff
+def erstelle_leere_db(db_path="test_studienfortschritt.db"):
+    """Legt eine neue DB an und entfernt alte, falls vorhanden."""
+    if Path(db_path).exists():
+        os.remove(db_path)
+    return sqlite3.connect(db_path)
 
-def zufaelliges_datum(start: date, end: date) -> str:
-    """
-    Gibt ein zufälliges Datum (YYYY-MM-DD) zwischen `start` und `end` zurück.
-    """
-    delta = end - start
-    tage = random.randint(0, delta.days)
-    zufalls_datum = start + timedelta(days=tage)
-    return zufalls_datum.isoformat()
 
-def setup_demo_database(db_path="data/datenbank.db"):
+def tabellen_erstellen_ohne_constraints(conn: sqlite3.Connection):
     """
-    Ersetzt eine vorhandene 'datenbank.db' durch eine neu erstellte
-    und füllt sie mit zufälligen Beispiel-Daten.
+    Erstellt Tabellen ähnlich deiner YAML-Definition, aber 
+    mit vereinfachten Constraints. 
+    (Beispielhaft für studiengang, verlauf, modul etc.)
     """
-    db_file = Path(db_path)
-    
-    # 1) Vorhandene DB sichern (oder löschen)
-    if db_file.exists():
-        backup_file = db_file.parent / "datenbank_backup.db"
-        print(f"[INFO] Alte Datenbank wird umbenannt in: {backup_file}")
-        if backup_file.exists():
-            backup_file.unlink()  # vorhandenes Backup löschen
-        db_file.rename(backup_file)
-    
-    # 2) Neue DB erstellen und initialisieren
-    print("[INFO] Lege neue Demo-Datenbank an...")
-    datenbank = DatenbankZugriff(db_pfad=str(db_file))
-    datenbank.starten()  # ruft intern 'verbinden()' + 'initialisieren()' auf
-    
-    # 3) Beispiel-Studiengang einfügen
-    print("[INFO] Füge Beispiel-Studiengang 'Informatik' hinzu...")
-    datenbank.studiengang_speichern(
-        studiengang_name="Informatik",
-        startdatum="2023-10-01",
-        urlaubssemester=0,
-        zeitmodell="Vollzeit"
-    )
-    
-    # Aktuelle StudiengangID ermitteln (uniqueConstraint=1)
-    sg_id = datenbank.abfragen(
-        "SELECT studiengangID FROM studiengang WHERE uniqueConstraint = 1"
-    )[0][0]
-    
-    # 4) Semester vorbereiten (legt bis zu 12 Semester an)
-    print("[INFO] Erstelle Semester 1-12...")
-    datenbank.semester_vorbereiten(sg_id)
-    
-    # 5) Zufällige Module anlegen
-    modul_namen = [
-        "Programmieren I", "Mathematik I", "Datenbanken", "Lineare Algebra",
-        "Statistik", "Programmieren II", "KI Grundlagen", "Webentwicklung",
-        "Operative Systeme", "Software-Engineering", "Data Science",
-        "Projektmanagement", "IT-Security", "Machine Learning"
-    ]
-    modul_kuerzel_prefix = ["PRG", "DB", "MAT", "KI", "WEB", "ML", "SEC", "ALGO", "PM"]
+    cursor = conn.cursor()
+
+    # Beispiel: Ohne UNIQUE bei 'uniqueConstraint' oder 'zeitpunkt'
+    # Du kannst die Constraints anpassen, wie du sie "entschärfen" möchtest.
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS studiengang (
+        studiengangID INTEGER PRIMARY KEY AUTOINCREMENT,
+        studiengangName TEXT,
+        startDatumStudium DATE,
+        urlaubsSemester INTEGER,
+        zeitModell TEXT,
+        uniqueConstraint INTEGER DEFAULT 1 -- Removed UNIQUE
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS verlauf (
+        verlaufID INTEGER PRIMARY KEY AUTOINCREMENT,
+        modulOffen INTEGER DEFAULT 0,
+        modulInBearbeitung INTEGER DEFAULT 0,
+        modulAbgeschlossen INTEGER DEFAULT 0,
+        zeitpunkt DATE -- Removed UNIQUE
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS semester (
+        semesterID INTEGER PRIMARY KEY AUTOINCREMENT,
+        studiengangID INTEGER,
+        semesterNR INTEGER,
+        istUrlaubSemester INTEGER
+        -- foreign key etc. entfernt, um constraints zu vermeiden
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS modul (
+        modulID INTEGER PRIMARY KEY AUTOINCREMENT,
+        semesterID INTEGER,
+        modulName TEXT,
+        modulKuerzel TEXT,
+        modulStatus TEXT,
+        modulEctsPunkte INTEGER,
+        modulStart DATE
+    );
+    """)
+
+    conn.commit()
+
+
+def beispieldaten_einfuegen(conn: sqlite3.Connection):
+    """
+    Fügt Beispiel- und Zufallsdaten in die Tabellen ein,
+    damit u.a. 'verlauf' mehrere Zeilen für unterschiedliche Zeitpunkte hat.
+    """
+    cursor = conn.cursor()
+
+    # 1) Studiengang-Dummy
+    cursor.execute("""
+        INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, zeitModell)
+        VALUES (?, ?, ?, ?);
+    """, ("Informatik", "2023-10-01", 0, "Vollzeit"))
+
+    # 2) Zufallsdaten für 'verlauf' anlegen
+    # Wir erzeugen z. B. 10 Einträge an 10 aufeinanderfolgenden Tagen
+    startdatum = datetime.date(2023, 10, 1)
+    for i in range(10):
+        aktuelles_datum = startdatum + datetime.timedelta(days=i)
+        modul_offen = random.randint(0, 10)
+        modul_in_bearbeitung = random.randint(0, 5)
+        modul_abgeschlossen = random.randint(0, 5)
+
+        # Insert
+        cursor.execute("""
+            INSERT INTO verlauf (modulOffen, modulInBearbeitung, modulAbgeschlossen, zeitpunkt)
+            VALUES (?, ?, ?, ?)
+        """, (
+            modul_offen,
+            modul_in_bearbeitung,
+            modul_abgeschlossen,
+            aktuelles_datum.isoformat()
+        ))
+
+    # 3) Ein paar Semester
+    for sem_nr in range(1, 6):
+        cursor.execute("""
+            INSERT INTO semester (studiengangID, semesterNR, istUrlaubSemester)
+            VALUES (1, ?, 0)
+        """, (sem_nr,))
+
+    # 4) Ein paar Module - rein zufällig
+    modul_namen = ["Mathe I", "Programmieren I", "Datenbanken", "Statistik", "Softwareentw."]
     status_liste = ["Offen", "In Bearbeitung", "Abgeschlossen"]
-    ects_werte = [5, 10, 15, 20]  # Muss %5=0 laut YAML
-    
-    # Wir fügen z.B. 15 zufällige Module ein
-    anzahl_module = 15
-    for i in range(anzahl_module):
-        # Zufälliges Semester aus 1-12
-        semester_id = random.randint(1, 12)
-        # Zufälliger Name aus Liste
-        modul_name = random.choice(modul_namen)
-        # Erzeuge kleines Kürzel (z.B. "PRG103")
-        kuerzel = random.choice(modul_kuerzel_prefix) + str(random.randint(100, 999))
-        # Zufälliger Status
+    for _ in range(8):
+        sem = random.randint(1, 5)
+        name = random.choice(modul_namen)
+        kurz = name[:3].upper() + str(random.randint(100,999))
+        ects = random.choice([5,10,15])
         status = random.choice(status_liste)
-        # Zufällige ECTS
-        ects = random.choice(ects_werte)
-        # Zufälliges Startdatum zwischen 2023-10-01 und 2024-06-01
-        startdatum = zufaelliges_datum(date(2023,10,1), date(2024,6,1))
-        
-        datenbank.modul_speichern(
-            semester_id=semester_id,
-            modul_name=modul_name,
-            kuerzel=kuerzel,
-            status=status,
-            ects=ects,
-            startdatum=startdatum
-        )
+        startdt = (startdatum + datetime.timedelta(days=random.randint(0,60))).isoformat()
 
-    # 6) Prüfungsleistungen für abgeschlossene Module
-    # Hole alle abgeschlossenen Module
-    abgeschlossene_module = datenbank.abfragen(
-        "SELECT modulID FROM modul WHERE modulStatus = 'Abgeschlossen';"
-    )
-    for (modul_id,) in abgeschlossene_module:
-        # Erzeuge zufälliges Prüfungsdatum nach dem Modulstart
-        # Erst Modulstart abfragen
-        start_str = datenbank.abfragen(
-            "SELECT modulStart FROM modul WHERE modulID = ?;", (modul_id,)
-        )[0][0]
-        start_year, start_month, start_day = map(int, start_str.split("-"))
-        start_datum = date(start_year, start_month, start_day)
-        # Prüfungsdatum zufällig zwischen Modulstart + 10 Tage und Modulstart + 120 Tage
-        pruefung_datum = zufaelliges_datum(
-            start_datum + timedelta(days=10),
-            start_datum + timedelta(days=120)
-        )
-        # Ergebnis (0 - 100%)
-        pruefung_ergebnis = random.randint(50, 100)  # Abgeschlossen => gutes Ergebnis
-        
-        # Einfügen
-        datenbank.manipulieren(
-            "INSERT INTO pruefungsleistung (modulID, pruefungDatum, pruefungErgebnis) VALUES (?, ?, ?)",
-            (modul_id, pruefung_datum, pruefung_ergebnis)
-        )
-    
-    # 7) (Optional) Verlaufs-Eintrag aktualisieren
-    print("[INFO] Aktualisiere Studienfortschritts-Verlauf für heute...")
-    datenbank.aktualisiere_studienfortschritt()
+        cursor.execute("""
+            INSERT INTO modul (semesterID, modulName, modulKuerzel, modulStatus, modulEctsPunkte, modulStart)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (sem, name, kurz, status, ects, startdt))
 
-    # Datenbankverbindung beenden
-    datenbank.trennen()
-    print("[INFO] Demo-Datenbank erfolgreich erstellt.")
+    conn.commit()
+
 
 def main():
-    setup_demo_database()
+    conn = erstelle_leere_db("test_studienfortschritt.db")
+    try:
+        tabellen_erstellen_ohne_constraints(conn)
+        beispieldaten_einfuegen(conn)
+
+        print("[INFO] Die neue DB 'test_studienfortschritt.db' wurde erstellt.")
+        print("[INFO] Tabellen ohne strenge Constraints angelegt und Beispiel-/Zufallsdaten eingefügt.")
+        print("[INFO] Du kannst jetzt dein Dashboard damit verbinden.")
+    finally:
+        conn.close()
+
 
 if __name__ == "__main__":
     main()
