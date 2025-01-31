@@ -25,7 +25,6 @@ class Startbildschirm(ttk.Frame):
             self.studiengang_anzeigen(daten)
 
     def studiengang_anzeigen(self, daten):
-        """Zeigt den Studiengang und das Startdatum an."""
         tree = ttk.Treeview(self, columns=("Name", "Startdatum"), show="headings")
         tree.heading("Name", text="Studiengang")
         tree.heading("Startdatum", text="Startdatum")
@@ -35,7 +34,6 @@ class Startbildschirm(ttk.Frame):
             tree.insert("", tk.END, values=eintrag)
 
     def studienstart_eingeben(self):
-        """Erzwingt die Eingabe des Studiengangs, Startdatums, Urlaubssemester, Arbeitstage und Zeitmodells."""
         frame = ttk.Frame(self)
         frame.pack(pady=20)
 
@@ -59,23 +57,6 @@ class Startbildschirm(ttk.Frame):
             btn.pack(pady=2)
             self.urlaubssemester_buttons.append(btn)
 
-        ttk.Label(frame, text="Arbeitstage auswählen:").pack()
-        self.arbeitstage_vars = {
-            "MO": tk.BooleanVar(),
-            "DI": tk.BooleanVar(),
-            "MI": tk.BooleanVar(),
-            "DO": tk.BooleanVar(),
-            "FR": tk.BooleanVar(),
-            "SA": tk.BooleanVar(),
-            "SO": tk.BooleanVar()
-        }
-        self.arbeitstage_buttons = {}
-
-        for tag, var in self.arbeitstage_vars.items():
-            btn = ttk.Checkbutton(frame, text=tag, variable=var)
-            btn.pack(side=tk.LEFT, padx=5)
-            self.arbeitstage_buttons[tag] = btn
-
         ttk.Label(frame, text="Zeitmodell auswählen:").pack(pady=5)
         self.zeitmodell_var = tk.StringVar()
         self.zeitmodell_dropdown = ttk.Combobox(frame, textvariable=self.zeitmodell_var, state="readonly")
@@ -85,7 +66,6 @@ class Startbildschirm(ttk.Frame):
         ttk.Button(frame, text="💾 Speichern", command=self.startdatum_speichern).pack(pady=10)
 
     def update_urlaubssemester(self):
-        """Stellt sicher, dass maximal 2 Urlaubssemester aktiv sind."""
         aktive = [var for var in self.urlaubssemester_vars if var.get()]
         if len(aktive) > 2:
             self.logger.warning("⚠️ Mehr als 2 Urlaubssemester gewählt, deaktiviere zuletzt aktivierten.")
@@ -95,10 +75,16 @@ class Startbildschirm(ttk.Frame):
                     break
 
     def startdatum_speichern(self):
-        """Speichert die Studieninformationen in die Datenbank."""
         studiengang = self.studiengang_entry.get().strip()
         datum_text = self.kalender.get_date()
         zeitmodell = self.zeitmodell_var.get()
+
+        zeitmodell_map = {
+            "Vollzeit": "Vollzeit",
+            "Teilzeit I": "TeilzeitI",
+            "Teilzeit II": "TeilzeitII"
+        }
+        zeitmodell = zeitmodell_map.get(zeitmodell, "")
 
         if not studiengang:
             self.logger.error("❌ Fehler: Kein Studiengang eingegeben.")
@@ -119,15 +105,7 @@ class Startbildschirm(ttk.Frame):
 
         urlaubssemester = sum(var.get() for var in self.urlaubssemester_vars)
 
-        aktive_arbeitstage = [tag for tag, var in self.arbeitstage_vars.items() if var.get()]
-        arbeitstage_sql = "_".join(aktive_arbeitstage)
-
-        if not arbeitstage_sql:
-            self.logger.error("❌ Fehler: Keine Arbeitstage ausgewählt.")
-            messagebox.showerror("Fehler", "Bitte wählen Sie mindestens einen Arbeitstag aus.")
-            return
-
-        daten = (studiengang, datum_text, urlaubssemester, arbeitstage_sql, zeitmodell)
+        daten = (studiengang, datum_text, urlaubssemester, zeitmodell)
         erfolgreich = self.master.logik.set_startbildschirm_ansicht_daten(daten)
 
         if erfolgreich:

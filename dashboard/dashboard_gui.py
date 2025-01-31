@@ -62,8 +62,6 @@ class Dashboard(tk.Tk):
 
         if not daten or not daten[0][1]:
             self.logger.warning("⚠️ Kein Studienstart hinterlegt. Starte Startbildschirm...")
-            messagebox.showinfo("Studienstart erforderlich", 
-                "Bevor Sie fortfahren können, müssen Sie Ihr Startdatum hinterlegen.")
             self.ansicht_wechseln(AnsichtTyp.STARTBILDSCHIRM)
         else:
             self.logger.info("✅ Studienstart vorhanden. Starte mit Modulübersicht...")

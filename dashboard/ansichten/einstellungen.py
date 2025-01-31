@@ -31,24 +31,11 @@ class Einstellungen(ttk.Frame):
         ttk.Checkbutton(frame, text="Urlaubssemester 1", variable=self.urlaub_var1).grid(row=2, column=1, sticky="w")
         ttk.Checkbutton(frame, text="Urlaubssemester 2", variable=self.urlaub_var2).grid(row=3, column=1, sticky="w")
 
-        ttk.Label(frame, text="📆 Arbeitstage:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
-        self.arbeitstage_vars = {
-            "MO": tk.IntVar(),
-            "DI": tk.IntVar(),
-            "MI": tk.IntVar(),
-            "DO": tk.IntVar(),
-            "FR": tk.IntVar(),
-            "SA": tk.IntVar(),
-            "SO": tk.IntVar(),
-        }
-        workdays_frame = ttk.Frame(frame)
-        workdays_frame.grid(row=4, column=1, padx=5, pady=5, sticky="w")
-        for i, (tag, var) in enumerate(self.arbeitstage_vars.items()):
-            ttk.Checkbutton(workdays_frame, text=tag, variable=var).grid(row=0, column=i, sticky="w")
-
-        ttk.Label(frame, text="⏳ Zeitmodell:").grid(row=5, column=0, padx=5, pady=5, sticky="w")
-        self.zeitmodell_combobox = ttk.Combobox(frame, values=["Vollzeit", "Teilzeit I", "Teilzeit II"])
-        self.zeitmodell_combobox.grid(row=5, column=1, padx=5, pady=5)
+        ttk.Label(frame, text="⏳ Zeitmodell:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        self.zeitmodell_var = tk.StringVar()
+        self.zeitmodell_combobox = ttk.Combobox(frame, textvariable=self.zeitmodell_var, state="readonly")
+        self.zeitmodell_combobox["values"] = ["Vollzeit", "Teilzeit I", "Teilzeit II"]
+        self.zeitmodell_combobox.grid(row=4, column=1, padx=5, pady=5)
         self.zeitmodell_combobox.current(0)
 
         if daten:
@@ -59,11 +46,10 @@ class Einstellungen(ttk.Frame):
                 self.urlaub_var1.set(1)
             if urlaubssemester == 2:
                 self.urlaub_var2.set(1)
-            arbeitstage = daten[0][3].split("_") if len(daten[0]) > 3 and daten[0][3] else []
-            for tag in arbeitstage:
-                if tag in self.arbeitstage_vars:
-                    self.arbeitstage_vars[tag].set(1)
-            self.zeitmodell_combobox.set(daten[0][4] if len(daten[0]) > 4 else "Vollzeit")
+
+            zeitmodell_db = daten[0][3] if len(daten[0]) > 3 else "Vollzeit"
+            zeitmodell_anzeige = "Vollzeit" if zeitmodell_db == "Vollzeit" else "Teilzeit I" if zeitmodell_db == "TeilzeitI" else "Teilzeit II"
+            self.zeitmodell_combobox.set(zeitmodell_anzeige)
 
         button_frame = ttk.Frame(self)
         button_frame.pack(pady=10)
@@ -76,14 +62,15 @@ class Einstellungen(ttk.Frame):
         neuer_studiengang = self.studiengang_entry.get().strip()
         neues_datum = self.kalender.get_date()
         urlaubssemester = self.urlaub_var1.get() + self.urlaub_var2.get()
-        arbeitstage = "_".join([tag for tag, var in self.arbeitstage_vars.items() if var.get()])
         neues_zeitmodell = self.zeitmodell_combobox.get()
+
+        zeitmodell_db = "Vollzeit" if neues_zeitmodell == "Vollzeit" else "TeilzeitI" if neues_zeitmodell == "Teilzeit I" else "TeilzeitII"
 
         if not neuer_studiengang:
             messagebox.showerror("Fehler", "Bitte einen Studiengang eingeben.")
             return
 
-        daten = (neuer_studiengang, neues_datum, urlaubssemester, arbeitstage, neues_zeitmodell)
+        daten = (neuer_studiengang, neues_datum, urlaubssemester, zeitmodell_db)
         erfolg = self.master.logik.set_einstellungen_ansicht_daten("UPDATE", daten)
 
         if erfolg:

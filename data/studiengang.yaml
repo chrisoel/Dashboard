@@ -4,6 +4,5 @@ spalten:
   studiengangName: "TEXT NOT NULL"
   startDatumStudium: "DATE NOT NULL"
   urlaubsSemester: "INTEGER NOT NULL CHECK (urlaubsSemester >= 0)"
-  arbeitstage: "TEXT NOT NULL CHECK (LENGTH(arbeitstage) > 0)"
   zeitModell: "TEXT NOT NULL CHECK (zeitModell IN ('Vollzeit', 'TeilzeitI', 'TeilzeitII'))"
   uniqueConstraint: "INTEGER NOT NULL DEFAULT 1 UNIQUE"

@@ -98,6 +98,26 @@ class DatenbankZugriff:
             self.logger.error(f"❌ Fehler beim Erstellen der Tabelle '{tabellen_name}': {e}")
             raise
 
+    def semester_vorbereiten(self, studiengang_id: int):
+        """Stellt sicher, dass die Semester 1 - 12 für den gegebenen `studiengangID` existieren."""
+        self.logger.info(f"📚 Überprüfe, ob Semester für Studiengang {studiengang_id} existieren...")
+
+        vorhandene_semester = self.abfragen("SELECT COUNT(*) FROM semester WHERE studiengangID = ?;", (studiengang_id,))[0][0]
+
+        if vorhandene_semester < 12:
+            self.logger.info(f"➕ Fehlen Semester für Studiengang {studiengang_id}, füge sie hinzu...")
+
+            for semester_nr in range(1, 13):
+                existiert = self.abfragen("SELECT semesterID FROM semester WHERE studiengangID = ? AND semesterNR = ?;", (studiengang_id, semester_nr))
+                if not existiert:
+                    self.manipulieren(
+                        "INSERT INTO semester (studiengangID, semesterNR, istUrlaubSemester) VALUES (?, ?, ?);",
+                        (studiengang_id, semester_nr, 0)
+                    )
+                    self.logger.info(f"✅ Semester {semester_nr} für Studiengang {studiengang_id} hinzugefügt.")
+        else:
+            self.logger.info(f"✅ Alle Semester für Studiengang {studiengang_id} existieren bereits.")
+
     def abfragen(self, sql_befehl: str, parameter: tuple = ()) -> list:
         """Führt eine SELECT-Abfrage aus und gibt die Ergebnisse zurück."""
         try:
@@ -130,19 +150,24 @@ class DatenbankZugriff:
             self.logger.error(f"❌ Fehler bei der Manipulation: {e}")
             return False
 
-    def studiengang_speichern(self, studiengang_name: str, startdatum: str, urlaubssemester: int, arbeitstage: str, zeitmodell: str) -> bool:
-        """
-        Speichert den Studiengang und das Startdatum in der 'studiengang'-Tabelle.
-        """
+    def studiengang_speichern(self, studiengang_name: str, startdatum: str, urlaubssemester: int, zeitmodell: str) -> bool:
+        """ Speichert den Studiengang und das Startdatum in der 'studiengang'-Tabelle. """
         sql = """
-        INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell, uniqueConstraint)
-        VALUES (?, ?, ?, ?, ?, ?);
+        INSERT INTO studiengang (studiengangName, startDatumStudium, urlaubsSemester, zeitModell, uniqueConstraint)
+        VALUES (?, ?, ?, ?, ?);
         """
         unique_constraint = 1
-        daten = (studiengang_name, startdatum, urlaubssemester, arbeitstage, zeitmodell, unique_constraint)
+        daten = (studiengang_name, startdatum, urlaubssemester, zeitmodell, unique_constraint)
 
         self.logger.info(f"✏️ Speichern des Studiengangs: {daten}")
-        return self.manipulieren(sql, daten)
+        erfolg = self.manipulieren(sql, daten)
+
+        if erfolg:
+            self.logger.info("✅ Studiengang erfolgreich gespeichert.")
+            studiengang_id = self.abfragen("SELECT studiengangID FROM studiengang WHERE uniqueConstraint = 1;")[0][0]
+            self.semester_vorbereiten(studiengang_id)
+
+        return erfolg
     
     def modul_speichern(
         self,
@@ -254,7 +279,7 @@ class DatenbankZugriff:
         - "DELETE": Löscht die gesamte Datenbank
         
         Parameter:
-        - daten (tuple): (studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell) für UPDATE
+        - daten (tuple): (studiengangName, startDatumStudium, urlaubsSemester, zeitModell) für UPDATE
         """
         if aktion.upper() == "UPDATE":
             if not daten:
@@ -263,7 +288,7 @@ class DatenbankZugriff:
 
             sql = """
             UPDATE studiengang 
-            SET studiengangName = ?, startDatumStudium = ?, urlaubsSemester = ?, arbeitstage = ?, zeitModell = ?
+            SET studiengangName = ?, startDatumStudium = ?, urlaubsSemester = ?, zeitModell = ?
             WHERE uniqueConstraint = 1;
             """
             self.logger.info(f"✏️ Aktualisiere Einstellungen: {daten}")

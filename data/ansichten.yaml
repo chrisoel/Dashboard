@@ -1,30 +1,52 @@
 views:
   startbildschirm:
-    - "CREATE VIEW IF NOT EXISTS startbildschirm AS SELECT studiengangName, startDatumStudium FROM studiengang;"
+    - "CREATE VIEW IF NOT EXISTS startbildschirm AS 
+        SELECT studiengangName, startDatumStudium 
+        FROM studiengang;"
+
   moduluebersicht:
-      - "CREATE VIEW IF NOT EXISTS moduluebersicht AS 
-          SELECT 
-              m.modulID,
-              m.semesterID,
-              s.semesterNR,
-              m.modulName,
-              m.modulKuerzel,
-              m.modulStatus,
-              m.modulEctsPunkte,
-              m.modulPruefungsform,
-              m.modulNote,
-              m.modulStart
-          FROM modul m
-          JOIN semester s ON m.semesterID = s.semesterID;"
+    - "CREATE VIEW IF NOT EXISTS moduluebersicht AS 
+        SELECT 
+            m.modulID,
+            m.semesterID,
+            s.semesterNR,
+            m.modulName,
+            m.modulKuerzel,
+            m.modulStatus,
+            m.modulEctsPunkte,
+            m.modulPruefungsform,
+            m.modulNote,
+            m.modulStart
+        FROM modul m
+        JOIN semester s ON m.semesterID = s.semesterID;"
+
   studienfortschritt:
     - |
       CREATE VIEW IF NOT EXISTS studienfortschritt AS 
-      SELECT v.modulOffen, v.modulInBearbeitung, v.modulAbgeschlossen, v.zeitpunkt, s.startDatumStudium
+      SELECT 
+          v.modulOffen, 
+          v.modulInBearbeitung, 
+          v.modulAbgeschlossen, 
+          v.zeitpunkt, 
+          s.startDatumStudium
       FROM verlauf v
       JOIN studiengang s ON s.uniqueConstraint = 1;
+
   zeitmanagement:
-    - "CREATE VIEW IF NOT EXISTS zeitmanagement AS SELECT studiengangName, arbeitstage, zeitModell FROM studiengang;"
+    - |
+      CREATE VIEW IF NOT EXISTS zeitmanagement AS 
+      SELECT 
+          s.studiengangName, 
+          s.zeitModell, 
+          s.startDatumStudium, 
+          COALESCE(SUM(m.modulEctsPunkte), 0) AS aktuelleEcts, 
+          COUNT(m.modulID) AS moduleGesamt
+      FROM studiengang s
+      LEFT JOIN semester sem ON sem.studiengangID = s.uniqueConstraint
+      LEFT JOIN modul m ON m.semesterID = sem.semesterID AND m.modulStatus = 'Abgeschlossen'
+      WHERE s.uniqueConstraint = 1;
+
   einstellungen:
-      - "CREATE VIEW IF NOT EXISTS einstellungen AS 
-        SELECT studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell 
+    - "CREATE VIEW IF NOT EXISTS einstellungen AS 
+        SELECT studiengangName, startDatumStudium, urlaubsSemester, zeitModell 
         FROM studiengang;"

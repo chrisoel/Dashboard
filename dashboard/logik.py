@@ -85,16 +85,16 @@ class Logik:
         return self.get_daten("einstellungen")
     
     def set_startbildschirm_ansicht_daten(self, daten: tuple) -> bool:
-        """ Speichert die vollständigen Studiengangsdaten über die 'DatenbankZugriff'-Schicht. """
+        """Speichert die Studiengangsdaten ohne Arbeitstage."""
         self.logger.info(f"✏️ Studiengang wird gespeichert: {daten}")
-        
-        if len(daten) != 5:
+
+        if len(daten) != 4:
             self.logger.error("❌ Ungültige Anzahl an Parametern für die Speicherung des Studiengangs.")
             return False
 
-        studiengang_name, startdatum, urlaubssemester, arbeitstage, zeitmodell = daten
+        studiengang_name, startdatum, urlaubssemester, zeitmodell = daten
 
-        return self.datenbank.studiengang_speichern(studiengang_name, startdatum, urlaubssemester, arbeitstage, zeitmodell)
+        return self.datenbank.studiengang_speichern(studiengang_name, startdatum, urlaubssemester, zeitmodell)
     
     def set_moduluebersicht_ansicht_daten(self, aktion: str, daten: tuple) -> bool:
         """
@@ -102,11 +102,6 @@ class Logik:
         - `INSERT`: Fügt ein neues Modul hinzu.
         - `UPDATE`: Aktualisiert ein bestehendes Modul.
         - `DELETE`: Löscht ein Modul.
-
-        daten:
-        - INSERT: (semesterID, modulName, modulKuerzel, modulStatus, modulPruefungsform, modulNote, modulEctsPunkte, modulStart)
-        - UPDATE: (modulID, modulName, modulKuerzel, modulStatus, modulPruefungsform, modulNote, modulEctsPunkte, modulStart)
-        - DELETE: (modulID,)
         """
         try:
             if aktion.upper() == "INSERT":
@@ -156,6 +151,6 @@ class Logik:
         - "DELETE": Löscht die gesamte Datenbank
         
         Parameter:
-        - daten (tuple): (studiengangName, startDatumStudium, urlaubsSemester, arbeitstage, zeitModell) für UPDATE
+        - daten (tuple): (studiengangName, startDatumStudium, urlaubsSemester, zeitModell) für UPDATE
         """
         return self.datenbank.einstellungen_verwalten(aktion, daten)
