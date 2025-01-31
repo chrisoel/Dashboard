@@ -2,9 +2,9 @@ import logging
 from datenbank_zugriff import DatenbankZugriff
 
 class Logik:
-    def __init__(self, db_pfad="data/datenbank.db"):
+    def __init__(self):
         self.logger = logging.getLogger("Logik")
-        self.datenbank = DatenbankZugriff(db_pfad)
+        self.datenbank = DatenbankZugriff()
     
     def starten(self) -> bool:
         """Startet die Logik-Schicht und verbindet zur Datenbank."""

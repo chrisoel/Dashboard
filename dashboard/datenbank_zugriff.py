@@ -5,8 +5,12 @@ import logging
 from pathlib import Path
 
 class DatenbankZugriff:
-    def __init__(self, db_pfad="data/datenbank.db"):
-        self.db_pfad = db_pfad
+    def __init__(self, db_pfad=None):
+        if db_pfad == None:
+            base_path = Path(__file__).parent.parent / "data"
+            self.db_pfad = db_pfad or str(base_path / "datenbank.db")
+        else:
+            self.db_pfad = db_pfad
         self.logger = logging.getLogger("DatenbankZugriff")
         self.verbindung = None
 
@@ -45,7 +49,7 @@ class DatenbankZugriff:
 
     def initialisieren(self):
         """Initialisiert Tabellen und Views basierend auf den YAML-Dateien."""
-        yaml_verzeichnis = Path("data")
+        yaml_verzeichnis = Path(__file__).parent.parent / "data"
         yaml_dateien = yaml_verzeichnis.glob("*.yaml")
 
         for yaml_datei in yaml_dateien:
